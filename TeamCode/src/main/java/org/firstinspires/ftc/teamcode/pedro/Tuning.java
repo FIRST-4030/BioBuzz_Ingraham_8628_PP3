@@ -17,14 +17,14 @@ public class Tuning {
         return new MecanumTuner();
     }
 
-    @Tuner
-    public static Procedure tests() {
-        return new Tests(
-                hardwareMap -> new Mecanum(hardwareMap, Constants.drivetrainConfig),
-                null,
-                null
-        );
-    }
+//    @Tuner
+//    public static Procedure tests() {
+//        return new Tests(
+//                hardwareMap -> new Mecanum(hardwareMap, Constants.drivetrainConfig),
+//                null,
+//                null
+//        );
+//    }
 
     @Tuner
     public static Procedure pinpointTuner() {

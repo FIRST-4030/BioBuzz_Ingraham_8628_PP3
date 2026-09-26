@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
@@ -10,7 +9,6 @@ public class Chassis {
 
     //    private double maxPower = 1.0;
     private double maxSpeed = 1.0;  // make this slower for outreaches
-    private double kPTurn = 0.10;
 
     public DcMotor frontLeftDrive, frontRightDrive, backLeftDrive, backRightDrive;
 
@@ -97,45 +95,6 @@ public class Chassis {
         frontRightDrive.setPower(frontrightpower);
         backLeftDrive.setPower(backleftpower);
         backRightDrive.setPower(backrightpower);
-    }
-
-    // NOTE:
-    // Don't want to use these turn, turnTo, and moveForward methods; they freeze the whole
-    // program with a while loop. Pedro would work better anyway.
-
-    public void turn(double power, double mseconds) {
-        ElapsedTime timer = new ElapsedTime();
-        timer.reset();
-
-        while (timer.milliseconds() < mseconds) {
-            frontLeftDrive.setPower(power);
-            backLeftDrive.setPower(power);
-            frontRightDrive.setPower(-power);
-            backRightDrive.setPower(-power);
-        }
-
-        stopMotors();
-    }
-
-    public void turnTo(double currentAngle, double setPoint) {
-        double error = setPoint - currentAngle;
-
-        double power = kPTurn*error;
-        moveAllMotors(-power,power,-power,power);
-    }
-
-    public void moveForward(double power, double mseconds) {
-        ElapsedTime timer = new ElapsedTime();
-        timer.reset();
-
-        while (timer.milliseconds() < mseconds) {
-            frontLeftDrive.setPower(power);
-            backLeftDrive.setPower(power);
-            frontRightDrive.setPower(power);
-            backRightDrive.setPower(power);
-        }
-
-        stopMotors();
     }
 
     public void getMotorSpeed(Telemetry telemetry) {
