@@ -21,7 +21,6 @@ public class Arm {
     private ArmMode armMode = ArmMode.COLLECTING;
 
     public Arm(HardwareMap hardwareMap) {
-        // Arm motor and potentiometer
         armHinge = hardwareMap.get(DcMotor.class, "arm");
         armPotentiometer = hardwareMap.get(AnalogInput.class, "arm_potentiometer");
     }
