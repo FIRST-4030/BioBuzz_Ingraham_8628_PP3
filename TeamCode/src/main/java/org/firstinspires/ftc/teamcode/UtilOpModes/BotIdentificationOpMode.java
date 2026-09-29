@@ -32,6 +32,7 @@ public class BotIdentificationOpMode extends OpMode {
         telemetry.addLine("   B   - Delete Bot Identification file");
         telemetry.addLine("   X   - Get ControlHub file name");
         telemetry.addLine("   Y   - Get Current bot identification");
+
         telemetry.addLine("   LB - Define bot as BIOBUZZ_DEMO");
         telemetry.addLine("   RB - Define bot as BIOBUZZ_COMPETITION");
 
@@ -65,6 +66,8 @@ public class BotIdentificationOpMode extends OpMode {
                 operation += " (Fallback)";
             }
 
+            // BELOW:
+            // CONTROLS FOR SETTING THE BOT IDENTIFICATION OF THE ROBOT
         } else if (gamepad1.leftBumperWasReleased()) {
             try {
                 controlHub.initializeControlHub(ControlHub.BotIdentification.BIOBUZZ_DEMO);
