@@ -22,6 +22,8 @@ public class ControlHub {
         SANDBOX3
     }
 
+    // This is the bot identification that will be used if the robot doesn't have a properly
+    // configured ControlHub.txt.
     public static final BotIdentification defaultBotIdentification = BotIdentification.BIOBUZZ_COMPETITION;
 
     private final String fileName;

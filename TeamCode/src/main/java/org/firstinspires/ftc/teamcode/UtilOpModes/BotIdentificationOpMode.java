@@ -9,9 +9,12 @@ import org.firstinspires.ftc.teamcode.ControlHub;
 import java.io.IOException;
 
 /* DO NOT disable this opmode.
-This opmode is for configuring bot identification per-robot using a text file that lives on the sd card.
-This is useful, because the same code will use the correct Pedro Pathing constants for different
-robots once their bot identification is set up.
+This opmode is for configuring bot identification per-robot using a text file that lives on the
+control hub's sd card.
+
+This is useful, because the exact same opModes can account for different robots' Pedro constants
+and weight, such as when using a demo robot to test an opMode that should eventually run on the
+competition robot.
  */
 @TeleOp(name="Bot Identification Manager", group = "Util")
 public class BotIdentificationOpMode extends OpMode {
