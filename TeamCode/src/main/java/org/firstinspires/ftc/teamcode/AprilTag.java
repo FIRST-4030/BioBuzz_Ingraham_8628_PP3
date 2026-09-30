@@ -91,83 +91,67 @@ public class AprilTag {
     private AprilTagProcessor aprilTag;
     private VisionPortal visionPortal;
 
-    private int goalTagId;
-
     public double distanceToGoal;
     private double bearing;
     private double yaw;
-    private double goalBearingBlue, goalBearingRed;
-    private double obeliskBearing;
-    private double obeliskRange;
 
-    private boolean blueSide;
-    private boolean redSide;
-    private boolean PPG,PGP,GPP;
-    private boolean targetInView = false;
+    public enum Cell {
+        RED_FAR,
+        RED_AUDIENCE,
+        BLUE_FAR,
+        BLUE_AUDIENCE,
+        NONE,
+    }
+
+    private Cell goalCell;
 
     List<AprilTagDetection> currentDetections;
 
+    public Cell getCellFromTagID(int tagID) {
+        switch (tagID) {
+            case 30:
+            case 31:
+            case 32:
+            case 33:
+                return Cell.RED_FAR;
+            case 34:
+            case 35:
+            case 36:
+            case 37:
+                return Cell.RED_AUDIENCE;
+            case 38:
+            case 39:
+            case 40:
+            case 41:
+                return Cell.BLUE_AUDIENCE;
+            case 42:
+            case 43:
+            case 44:
+            case 45:
+                return Cell.BLUE_FAR;
+            default:
+                return Cell.NONE;
+        }
+    }
+
     @SuppressLint("DefaultLocale")
     public void scanField(Telemetry telemetry){
-
         currentDetections = aprilTag.getDetections();
 
-        if(!currentDetections.isEmpty()) {
-            for (AprilTagDetection detection : currentDetections) {
-                if (detection.metadata != null) {
-                    if (detection.id == 20){
-                        blueSide = true;
-                        redSide = false;
-                        goalBearingBlue = detection.ftcPose.bearing;
-                        distanceToGoal = detection.ftcPose.range;
-                        goalTagId = detection.id;
-                    }
-                    if (detection.id == 24){
-                        blueSide = false;
-                        redSide = true;
-                        goalBearingRed = detection.ftcPose.bearing;
-                        distanceToGoal = detection.ftcPose.range;
-                        goalTagId = detection.id;
-                    }
-                    if (detection.id == 22){ //PGP
-                        PPG = false;
-                        GPP = false;
-                        PGP = true;
-                        obeliskRange = detection.ftcPose.range;
-                        obeliskBearing = detection.ftcPose.bearing;
-                    }
-                    else if (detection.id == 23){ //PPG
-                        PPG = true;
-                        GPP = false;
-                        PGP = false;
-                        obeliskRange = detection.ftcPose.range;
-                        obeliskBearing = detection.ftcPose.bearing;
-                    }
-                    else if (detection.id == 21){ //GPP
-                        PPG = false;
-                        GPP = true;
-                        PGP = false;
-                        obeliskRange = detection.ftcPose.range;
-                        obeliskBearing = detection.ftcPose.bearing;
-                    }
-
-                 }
-            }
-
-            telemetry.addLine(String.format("# AprilTags Detected: %d\n", currentDetections.size()));
-            telemetry.addLine(String.format("GPP=%b, PGP=%b, PPG=%b\n", GPP, PGP, PPG));
-            if (blueSide) {
-                bearing = goalBearingBlue;
-                telemetry.addLine(String.format("Blue  Goal:  Bearing=%6.2f", goalBearingBlue));
-            }
-            if (redSide) {
-                bearing = goalBearingRed;
-                telemetry.addLine(String.format("Red  Goal:  Bearing=%6.2f", goalBearingRed));
-            }
-
-        } else {
+        if(currentDetections.isEmpty()) {
             telemetry.addLine("No tags");
             bearing = 999;
+            return;
+        }
+
+        telemetry.addLine(String.format("# AprilTags Detected: %d\n", currentDetections.size()));
+
+        for (AprilTagDetection detection: currentDetections) {
+            if (detection.metadata == null) continue;
+
+            if (getCellFromTagID(detection.id) != Cell.NONE) {
+                goalCell = getCellFromTagID(detection.id);
+            }
         }
     }
 
@@ -236,53 +220,7 @@ public class AprilTag {
     public void closeAprilTag(){
         visionPortal.close();
     }
-    /**
-     * Add telemetry about AprilTag detections.
-     */
-    @SuppressLint("DefaultLocale")
-    public boolean runInLoop(Telemetry telemetry, boolean display) {
-
-        currentDetections = aprilTag.getDetections();
-        if (display) {
-            telemetry.addData("# AprilTags Detected", currentDetections.size());
-        }
-
-        if(!currentDetections.isEmpty()) {
-            for (AprilTagDetection detection : currentDetections) {
-                if (detection.metadata != null) {
-                    if (detection.id == goalTagId) {
-                        targetInView = true;
-                        distanceToGoal = detection.ftcPose.y;
-                        bearing = detection.ftcPose.bearing;
-                        yaw = detection.ftcPose.yaw;
-                        if (display) {
-                            telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
-                            telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.z));
-                            telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detection.ftcPose.pitch, detection.ftcPose.roll, detection.ftcPose.yaw));
-                            telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
-                        }
-                    } else {
-                        targetInView = false;
-                        if (display) {
-                            telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
-                            telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));
-                        }
-                    }
-                }
-                if (display) { telemetry.update(); }
-            }
-        }
-        else {
-            bearing = 999;
-        }
-        return targetInView;
-    }
 
     public double getBearing() { return bearing; }
     public double getYaw() { return yaw; }
-    public double getObeliskBearing() { return obeliskBearing; }
-    public double getObeliskRange() { return obeliskRange; }
-    public double getGoalTagId() { return goalTagId; }
-
-    public void setGoalTagID(int value) { goalTagId = value; }
 }

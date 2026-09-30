@@ -2,19 +2,23 @@ package org.firstinspires.ftc.teamcode.UtilOpModes;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.generalUtilities.Blackboard;
 import org.firstinspires.ftc.teamcode.Arm;
 import org.firstinspires.ftc.teamcode.Chassis;
 import org.firstinspires.ftc.teamcode.ControlHub;
+import org.firstinspires.ftc.teamcode.Limelight;
 
-@TeleOp(name = "Arm Tester", group="Util")
-public class ArmTester extends OpMode {
+@TeleOp(name = "Debug TeleOp", group="Util")
+public class DebugTeleOp extends OpMode {
 
     Chassis chassis;
     Arm arm;
 
     ControlHub controlHub;
+    IMU imu;
+    Limelight limelight;
 
     @Override
     public void init() {
@@ -22,6 +26,10 @@ public class ArmTester extends OpMode {
         arm = new Arm(hardwareMap);
 
         controlHub = new ControlHub();
+        imu = hardwareMap.get(IMU.class, "imu");
+
+        limelight = new Limelight(telemetry);
+        limelight.init(hardwareMap);
     }
 
     public void init_loop() {
@@ -42,6 +50,9 @@ public class ArmTester extends OpMode {
 
         chassis.drive(gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
         arm.update();
+
+        telemetry.addData("Best April Tag Tx", limelight.getBestHiveAprilTagOrNull().getTargetXPixels());
+        telemetry.addLine();
 
         telemetry.addData("Arm mode", arm.getArmMode());
         telemetry.addLine();

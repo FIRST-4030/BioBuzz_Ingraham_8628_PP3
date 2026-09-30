@@ -1,148 +1,112 @@
 package org.firstinspires.ftc.teamcode;
 
-import android.annotation.SuppressLint;
-
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.IMU;
 
+import org.firstinspires.ftc.generalUtilities.Blackboard;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
-import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 import java.util.List;
 
 public class Limelight {
 
     private Telemetry telemetry;
-
     public Limelight3A limelight;
-    private double goalYaw; // inches
-    private double goalRange; // in
-    private double blueSideX, blueSideY, redSideX, redSideY;
-    private double blueSideXMT2, blueSideYMT2, redSideXMT2, redSideYMT2;
 
-    private int goalTagId;
-    private int teamID;
     private static final double METERS_TO_INCHES = 39.3701;
 
-    private double tx, ty, x, y, yaw;
-
-    private boolean PPG,PGP,GPP;
-    public boolean seeObelisk = false;
-    public boolean isDataCurrent;
-
-    private final double camera_height = 16.75; // in
-    private final double target_height = 29.5; // in
-    private double camera_angle = -0.002; // Using LimelightAngleSetter
-
-    IMU imu;
-
-    @SuppressLint("DefaultLocale")
-    public void getTagLocations(String color, IMU imu) {
-        LLResult result;
-        YawPitchRollAngles orientation;
-
-        if (color.equals("Red")) {
-            limelight.pipelineSwitch(1);
-
-            orientation = imu.getRobotYawPitchRollAngles();
-            limelight.updateRobotOrientation(orientation.getYaw());
-
-            result = limelight.getLatestResult();
-            List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
-
-            for (LLResultTypes.FiducialResult fiducial : fiducials) {
-                int tagId = fiducial.getFiducialId();
-                if (tagId==24) {
-                    Pose3D botposeRedMT2 = result.getBotpose_MT2();
-                    redSideXMT2 = botposeRedMT2.getPosition().x;
-                    redSideYMT2 = botposeRedMT2.getPosition().y;
-                    Pose3D botposeRed = result.getBotpose();
-                    redSideX = botposeRed.getPosition().x;
-                    redSideY = botposeRed.getPosition().y;
-//                    telemetry.addLine(String.format("Red: xMT2=%6.2f, yMT2=%6.2f",redSideXMT2,redSideYMT2));
-//                    telemetry.addLine(String.format("     x=%6.2f, y=%6.2f",redSideX,redSideY));
-                }
-            }
-        }
-
-        if (color.equals("Blue")) {
-            limelight.pipelineSwitch(5);
-
-            orientation = imu.getRobotYawPitchRollAngles();
-            limelight.updateRobotOrientation(orientation.getYaw());
-
-            result = limelight.getLatestResult();
-            List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
-
-            for (LLResultTypes.FiducialResult fiducial : fiducials) {
-                int tagId = fiducial.getFiducialId();
-                if (tagId==20) {
-                    Pose3D botposeBlueMT2 = result.getBotpose_MT2();
-                    blueSideXMT2 = botposeBlueMT2.getPosition().x;
-                    blueSideYMT2 = botposeBlueMT2.getPosition().y;
-                    Pose3D botposeBlue = result.getBotpose();
-                    blueSideX = botposeBlue.getPosition().x;
-                    blueSideY = botposeBlue.getPosition().y;
-//                    telemetry.addLine(String.format("Blue: xMT2=%6.2f, yMT2=%6.2f",blueSideXMT2,blueSideYMT2));
-//                    telemetry.addLine(String.format("      x=%6.2f, y=%6.2f",blueSideX,blueSideY));
-                }
-            }
-        }
+    public enum HiveCell {
+        RED_FAR,
+        RED_AUDIENCE,
+        BLUE_FAR,
+        BLUE_AUDIENCE,
+        NONE,
     }
 
-    public String getObelisk() {
-        if (PGP) {
-            return "PGP";
-        } else if (GPP) {
-            return "GPP";
-        } else if (PPG) {
-            return "PPG";
-        } else {
-            return "No Tag Detected";
-        }
-    }
+    public final int RED_HIVES_PIPELINE = 0;
+    public final int BLUE_HIVES_PIPELINE = 1;
 
-    public void init(HardwareMap hardwareMap, IMU imu, Telemetry telemetry) {
-        this.imu = imu;
+    public Limelight(Telemetry telemetry) {
         this.telemetry = telemetry;
+    }
 
+    // On second thought, do we even need to know which cell we are aiming at?
+    public HiveCell getHiveCellFromTagID(int tagID) {
+        switch (tagID) {
+            case 30:
+            case 31:
+            case 32:
+            case 33:
+                return HiveCell.RED_FAR;
+            case 34:
+            case 35:
+            case 36:
+            case 37:
+                return HiveCell.RED_AUDIENCE;
+            case 38:
+            case 39:
+            case 40:
+            case 41:
+                return HiveCell.BLUE_AUDIENCE;
+            case 42:
+            case 43:
+            case 44:
+            case 45:
+                return HiveCell.BLUE_FAR;
+            default:
+                return HiveCell.NONE;
+        }
+    }
+
+    public LLResultTypes.FiducialResult getBestHiveAprilTagOrNull() {
+        LLResult latestResult = limelight.getLatestResult();
+        List<LLResultTypes.FiducialResult> fiducials = latestResult.getFiducialResults();
+
+        doAllianceAimingPipeline();
+
+        LLResultTypes.FiducialResult closestAprilTag = null;
+        double closestAprilTagArea = 0;
+        for (LLResultTypes.FiducialResult fiducial : fiducials) {
+            double targetArea = fiducial.getTargetArea();
+
+            // TODO: For now, we can just pick the April tag closest to us. Might be worth thinking
+            //  about better ways to pick where to aim within a hive cell.
+            if (targetArea > closestAprilTagArea) {
+                closestAprilTag = fiducial;
+                closestAprilTagArea = targetArea;
+            }
+        }
+
+        return closestAprilTag;
+    }
+
+    public void doAllianceAimingPipeline() {
+        int pipelineToSwitchTo;
+        switch (Blackboard.getAlliance()) {
+            case RED:
+                pipelineToSwitchTo = RED_HIVES_PIPELINE;
+                break;
+            case BLUE:
+                pipelineToSwitchTo = BLUE_HIVES_PIPELINE;
+                break;
+            default:
+                // TODO: Should we really aim for red by default? Maybe we should think of specific
+                //  fallback functionality in case the alliance is still unknown at game time.
+                pipelineToSwitchTo = RED_HIVES_PIPELINE;
+                break;
+        }
+
+        if (getPipeline() != pipelineToSwitchTo) {
+            limelight.pipelineSwitch(pipelineToSwitchTo);
+        }
+    }
+
+    public void init(HardwareMap hardwareMap) {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
-        telemetry.setMsTransmissionInterval(11);
         limelight.start(); // This tells Limelight to start looking!
-    }
-
-    public boolean process() {
-
-        LLResult result = limelight.getLatestResult();
-        if (result != null && result.isValid()) {
-            Pose3D botPose = result.getBotpose();
-
-            tx = result.getTx(); // How far left or right the target is (degrees)
-            ty = result.getTy(); // How far up or down the target is (degrees)
-
-            double ta = result.getTa(); // How big the target looks (0%-100% of the image)
-            if (botPose != null) {
-
-                goalYaw = botPose.getOrientation().getYaw();
-                goalRange = (target_height - camera_height) / (Math.tan(Math.toRadians(ty)+camera_angle));
-
-                isDataCurrent = true;
-            } else {
-                isDataCurrent = false;
-            }
-
-//            telemetry.addData("pipeline", result.getPipelineIndex());
-//            telemetry.addData("limelight Range", goalRange);
-        } else {
-            isDataCurrent = false;
-//            telemetry.addData("Limelight", "No Targets");
-        }
-        return isDataCurrent;
     }
 
     public boolean hasResults() {
@@ -150,100 +114,5 @@ public class Limelight {
         return (result != null && result.isValid());
     }
 
-    public void processRobotPoseMt1() {
-//        limelight.pipelineSwitch(6); // obelisk
-//        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-//        limelight.updateRobotOrientation(orientation.getYaw());
-        LLResult result = limelight.getLatestResult();
-        if (result != null && result.isValid()) {
-            Pose3D botPose = result.getBotpose();
-            if (botPose != null) {
-                x = botPose.getPosition().x * METERS_TO_INCHES;
-                y = botPose.getPosition().y * METERS_TO_INCHES;
-                yaw = botPose.getOrientation().getYaw();
-            }
-        }
-    }
-
-    public void processRobotPoseMt2() {
-//        int oldPipeline = limelight.getLatestResult().getPipelineIndex();
-
-//        limelight.pipelineSwitch(6); // obelisk
-        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-        limelight.updateRobotOrientation(orientation.getYaw() + 180);
-        LLResult result = limelight.getLatestResult();
-        if (result != null && result.isValid()) {
-            Pose3D botPose = result.getBotpose_MT2();
-            x = botPose.getPosition().x*METERS_TO_INCHES + 72;
-            y = botPose.getPosition().y*METERS_TO_INCHES + 72;
-        }
-
-//        limelight.pipelineSwitch(oldPipeline);
-    }
-
-    @SuppressLint("DefaultLocale")
-    public void readObelisk() {
-
-        limelight.pipelineSwitch(6); //targets closest
-
-        YawPitchRollAngles orientation = imu.getRobotYawPitchRollAngles();
-        limelight.updateRobotOrientation(orientation.getYaw());
-
-        LLResult result = limelight.getLatestResult();
-
-        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
-        if (fiducials.isEmpty()) {
-            seeObelisk = false;
-        } else {
-
-            for (LLResultTypes.FiducialResult fiducial : fiducials) {
-                int tagId = fiducial.getFiducialId();
-
-                if (tagId == 22) { //PGP
-                    PPG = false;
-                    GPP = false;
-                    PGP = true;
-                    seeObelisk = true;
-                } else if (tagId == 23) { //PPG
-                    PPG = true;
-                    GPP = false;
-                    PGP = false;
-                    seeObelisk = true;
-                } else if (tagId == 21) { //GPP
-                    PPG = false;
-                    GPP = true;
-                    PGP = false;
-                    seeObelisk = true;
-                }
-            }
-        }
-    }
-
-    public void setTeam(int id) {
-        if (id == 20) {
-            limelight.pipelineSwitch(5);
-            teamID = 20;
-        } else if (id == 24) {
-            limelight.pipelineSwitch(1);
-            teamID = 24;
-        }
-    }
-
-    public void setCameraAngle(double angle) {
-        this.camera_angle = angle;
-    }
-
     public int getPipeline() { return limelight.getStatus().getPipelineIndex(); }
-    public int getTeam() { return teamID; }
-
-    public double getCameraAngle() { return camera_angle; }
-    public double getX() { return x; }
-    public double getY() { return y; }
-    public double getTx() { return tx; };
-    public double getTy() { return ty; };
-    public double getYaw() { return goalYaw; }
-    public double getRange() { return goalRange; }
-    public double getGoalTagId() { return goalTagId; }
-
-    public void setGoalTagID(int value) { goalTagId = value; }
 }
