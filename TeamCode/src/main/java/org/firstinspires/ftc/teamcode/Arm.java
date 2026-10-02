@@ -8,10 +8,13 @@ public class Arm {
 
     DcMotor armHinge;
     AnalogInput armPotentiometer;
+    Limelight limelight;
 
     // 90 degrees is defined as parallel to the ground.
     private final double COLLECTING_ARM_ANGLE_DEG = 60.0;
     private final double AIMING_ARM_ANGLE_DEG = 130.0;
+
+    private double currentAimingAngleOffset = 0;
 
     public enum ArmMode {
         COLLECTING,
@@ -20,9 +23,10 @@ public class Arm {
 
     private ArmMode armMode = ArmMode.COLLECTING;
 
-    public Arm(HardwareMap hardwareMap) {
+    public Arm(HardwareMap hardwareMap, Limelight limelight) {
         armHinge = hardwareMap.get(DcMotor.class, "arm");
         armPotentiometer = hardwareMap.get(AnalogInput.class, "arm_potentiometer");
+        this.limelight = limelight;
     }
 
     public void update() {
@@ -45,15 +49,22 @@ public class Arm {
 
     private void aimingModeUpdate() {
         double currentArmAngleDegrees = this.getCurrentArmAngleDegrees();
-        double power = calculateHingePowerForAngle(currentArmAngleDegrees, AIMING_ARM_ANGLE_DEG);
 
-        /*
-        * Eventually, I want to: first check if there are April tags for the hive visible. If so,
-        * instead of rotating toward the AIMING_ARM_ANGLE_DEG, rotate towards the april tag we want
-        * to aim for using the Limelight.
-        *
-        * For now, just rotating towards the preset aiming angle will do!
-        * */
+        if (limelight.hasValidResult()) {
+            currentAimingAngleOffset += limelight.getYError() * 0.5;
+
+            if (AIMING_ARM_ANGLE_DEG + currentAimingAngleOffset > 170) {
+                currentAimingAngleOffset = 170 - AIMING_ARM_ANGLE_DEG;
+            }
+
+            if (AIMING_ARM_ANGLE_DEG + currentAimingAngleOffset < 90) {
+                currentAimingAngleOffset = 90 - AIMING_ARM_ANGLE_DEG;
+            }
+        } else {
+            currentAimingAngleOffset *= 0.95;
+        }
+
+        double power = calculateHingePowerForAngle(currentArmAngleDegrees, AIMING_ARM_ANGLE_DEG + currentAimingAngleOffset);
 
         armHinge.setPower(power);
     }

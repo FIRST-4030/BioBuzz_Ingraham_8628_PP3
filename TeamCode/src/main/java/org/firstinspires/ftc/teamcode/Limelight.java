@@ -26,10 +26,13 @@ public class Limelight {
 
     public final int RED_ALL_PIPELINE = 0;
     public final int BLUE_ALL_PIPELINE = 1;
-    public final int RED_LEFT_CENTER = 2;
-    public final int RED_RIGHT_CENTER = 3;
-    public final int BLUE_LEFT_CENTER = 4;
-    public final int BLUE_RIGHT_CENTER = 5;
+    public final int RED_LEFT_CENTER_PIPELINE = 2;
+    public final int RED_RIGHT_CENTER_PIPELINE = 3;
+    public final int BLUE_LEFT_CENTER_PIPELINE = 4;
+    public final int BLUE_RIGHT_CENTER_PIPELINE = 5;
+
+    private final double X_ERROR_THRESHOLD = 10;
+    private final double Y_ERROR_THRESHOLD = 10;
 
     public Limelight(Telemetry telemetry) {
         this.telemetry = telemetry;
@@ -62,36 +65,40 @@ public class Limelight {
         }
     }
 
-    public double getAimingHorizontalError() {
-        return getLatestResult().getTx();
-    }
-
-    public double getAimingVerticalError() {
-        return getLatestResult().getTy();
-    }
-
-    public void switchToBestAimingPipeline(List<LLResultTypes.FiducialResult> fiducials) {
-        int currentPipeline = getPipeline();
-        int bestPipeline = currentPipeline;
-
-        List<Integer> visibleTagIDs = new ArrayList<>();
-
-        for (LLResultTypes.FiducialResult fiducial : fiducials) {
-            visibleTagIDs.add(fiducial.getFiducialId());
+    public double getXError() {
+        if (hasValidResult()) {
+            return getLatestResult().getTx();
+        } else {
+            return 0;
         }
+    }
+
+    public double getYError() {
+        if (hasValidResult()) {
+            return getLatestResult().getTy();
+        } else {
+            return 0;
+        }
+    }
+
+    public void switchToBestAimingPipeline() {
+        if (!hasValidResult()) return;
+
+        int currentPipeline = getCurrentPipeline();
+        int bestPipeline = currentPipeline;
 
         // If for some reason we are aiming for the blue hives when we are on the red alliance,
         // or vice versa, switch the pipeline to the appropriate alliance!
         boolean wrongAlliance = false;
         switch (Blackboard.getAlliance()) {
             case BLUE:
-                if (currentPipeline == RED_ALL_PIPELINE || currentPipeline == RED_LEFT_CENTER || currentPipeline == RED_RIGHT_CENTER) {
+                if (currentPipeline == RED_ALL_PIPELINE || currentPipeline == RED_LEFT_CENTER_PIPELINE || currentPipeline == RED_RIGHT_CENTER_PIPELINE) {
                     wrongAlliance = true;
                     limelight.pipelineSwitch(BLUE_ALL_PIPELINE);
                 }
                 break;
             case RED:
-                if (currentPipeline == BLUE_ALL_PIPELINE || currentPipeline == BLUE_LEFT_CENTER || currentPipeline == BLUE_RIGHT_CENTER) {
+                if (currentPipeline == BLUE_ALL_PIPELINE || currentPipeline == BLUE_LEFT_CENTER_PIPELINE || currentPipeline == BLUE_RIGHT_CENTER_PIPELINE) {
                     wrongAlliance = true;
                     limelight.pipelineSwitch(RED_ALL_PIPELINE);
                 }
@@ -99,38 +106,40 @@ public class Limelight {
         }
         if (wrongAlliance) return;
 
-        switch (getPipeline()) {
+
+        List<LLResultTypes.FiducialResult> fiducials = getLatestResult().getFiducialResults();
+        List<Integer> visibleTagIDs = new ArrayList<>();
+
+        for (LLResultTypes.FiducialResult fiducial : fiducials) {
+            visibleTagIDs.add(fiducial.getFiducialId());
+        }
+
+        switch (currentPipeline) {
             case RED_ALL_PIPELINE:
                 if (visibleTagIDs.contains(31) || visibleTagIDs.contains(35)) {
-                    bestPipeline = RED_LEFT_CENTER;
-                }
-                if (visibleTagIDs.contains(32) || visibleTagIDs.contains(36)) {
-                    bestPipeline = RED_RIGHT_CENTER;
+                    bestPipeline = RED_LEFT_CENTER_PIPELINE;
+                } else if (visibleTagIDs.contains(32) || visibleTagIDs.contains(36)) {
+                    bestPipeline = RED_RIGHT_CENTER_PIPELINE;
                 }
                 break;
             case BLUE_ALL_PIPELINE:
                 if (visibleTagIDs.contains(39) || visibleTagIDs.contains(43)) {
-                    bestPipeline = BLUE_LEFT_CENTER;
+                    bestPipeline = BLUE_LEFT_CENTER_PIPELINE;
+                } else if (visibleTagIDs.contains(40) || visibleTagIDs.contains(44)) {
+                    bestPipeline = BLUE_RIGHT_CENTER_PIPELINE;
                 }
-                if (visibleTagIDs.contains(40) || visibleTagIDs.contains(44)) {
-                    bestPipeline = BLUE_RIGHT_CENTER;
-                }
                 break;
-            case RED_LEFT_CENTER:
-                if (canSeeHiveCell(HiveCell.RED_SCORING, fiducials) && !visibleTagIDs.contains(31)) bestPipeline = RED_ALL_PIPELINE;
-                if (canSeeHiveCell(HiveCell.RED_AUDIENCE, fiducials) && !visibleTagIDs.contains(35)) bestPipeline = RED_ALL_PIPELINE;
+            case RED_LEFT_CENTER_PIPELINE:
+                if (!visibleTagIDs.contains(31) && !visibleTagIDs.contains(35)) bestPipeline = RED_ALL_PIPELINE;
                 break;
-            case RED_RIGHT_CENTER:
-                if (canSeeHiveCell(HiveCell.RED_SCORING, fiducials) && !visibleTagIDs.contains(32)) bestPipeline = RED_ALL_PIPELINE;
-                if (canSeeHiveCell(HiveCell.RED_AUDIENCE, fiducials) && !visibleTagIDs.contains(36)) bestPipeline = RED_ALL_PIPELINE;
+            case RED_RIGHT_CENTER_PIPELINE:
+                if (!visibleTagIDs.contains(32) && !visibleTagIDs.contains(36)) bestPipeline = RED_ALL_PIPELINE;
                 break;
-            case BLUE_LEFT_CENTER:
-                if (canSeeHiveCell(HiveCell.BLUE_SCORING, fiducials) && !visibleTagIDs.contains(39)) bestPipeline = BLUE_ALL_PIPELINE;
-                if (canSeeHiveCell(HiveCell.BLUE_AUDIENCE, fiducials) && !visibleTagIDs.contains(43)) bestPipeline = BLUE_ALL_PIPELINE;
+            case BLUE_LEFT_CENTER_PIPELINE:
+                if (!visibleTagIDs.contains(39) && !visibleTagIDs.contains(43)) bestPipeline = BLUE_ALL_PIPELINE;
                 break;
-            case BLUE_RIGHT_CENTER:
-                if (canSeeHiveCell(HiveCell.BLUE_SCORING, fiducials) && !visibleTagIDs.contains(40)) bestPipeline = BLUE_ALL_PIPELINE;
-                if (canSeeHiveCell(HiveCell.BLUE_AUDIENCE, fiducials) && !visibleTagIDs.contains(44)) bestPipeline = BLUE_ALL_PIPELINE;
+            case BLUE_RIGHT_CENTER_PIPELINE:
+                if (!visibleTagIDs.contains(40) && !visibleTagIDs.contains(44)) bestPipeline = BLUE_ALL_PIPELINE;
                 break;
         }
 
@@ -151,7 +160,11 @@ public class Limelight {
     }
 
     public boolean isOnTarget() {
-        return false;
+        if (hasValidResult()) {
+            return (Math.abs(getXError()) < X_ERROR_THRESHOLD && Math.abs(getYError()) < Y_ERROR_THRESHOLD);
+        } else {
+            return false;
+        }
     }
 
     public void init(HardwareMap hardwareMap) {
@@ -160,12 +173,12 @@ public class Limelight {
         limelight.start(); // This tells Limelight to start looking!
     }
 
-    public boolean hasResults() {
+    public boolean hasValidResult() {
         LLResult result = limelight.getLatestResult();
         return (result != null && result.isValid());
     }
 
-    public int getPipeline() { return limelight.getStatus().getPipelineIndex(); }
+    public int getCurrentPipeline() { return limelight.getStatus().getPipelineIndex(); }
 
     public LLResult getLatestResult() {
         return limelight.getLatestResult();

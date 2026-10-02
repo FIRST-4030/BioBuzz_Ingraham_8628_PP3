@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.UtilOpModes;
 
-import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -14,12 +13,12 @@ import org.firstinspires.ftc.teamcode.Limelight;
 @TeleOp(name = "Debug TeleOp", group="Util")
 public class DebugTeleOp extends OpMode {
 
-    Chassis chassis;
-    Arm arm;
-
     ControlHub controlHub;
+
     IMU imu;
     Limelight limelight;
+    Chassis chassis;
+    Arm arm;
 
     enum DriveControlMode {
         MANUAL,
@@ -30,14 +29,13 @@ public class DebugTeleOp extends OpMode {
 
     @Override
     public void init() {
-        chassis = new Chassis(hardwareMap);
-        arm = new Arm(hardwareMap);
-
         controlHub = new ControlHub();
-        imu = hardwareMap.get(IMU.class, "imu");
 
+        imu = hardwareMap.get(IMU.class, "imu");
         limelight = new Limelight(telemetry);
         limelight.init(hardwareMap);
+        chassis = new Chassis(hardwareMap);
+        arm = new Arm(hardwareMap, limelight);
     }
 
     public void init_loop() {
@@ -47,23 +45,19 @@ public class DebugTeleOp extends OpMode {
 
     public void start() {
         arm.activateCollectingMode();
+        limelight.switchToBestAimingPipeline();
     }
 
     public void loop() {
-        handleModeControl();
-
-        double bestTx = 0;
+        handleModeSwitchingControls();
 
         switch (driveControlMode) {
             case MANUAL:
                 chassis.drive(gamepad1.left_stick_y, -gamepad1.left_stick_x, gamepad1.right_stick_x);
                 break;
             case AUTOMATIC:
-                if (bestTx > 50) {
-                    chassis.drive(gamepad1.left_stick_y, -gamepad1.left_stick_x, bestTx / 28);
-                } else {
-                    chassis.drive(gamepad1.left_stick_y, -gamepad1.left_stick_x, bestTx / 35);
-                }
+                // TODO: Better PID equation for this instead of just a lerp
+                chassis.drive(gamepad1.left_stick_y, -gamepad1.left_stick_x, limelight.getXError() / 35);
                 break;
         }
 
@@ -71,7 +65,7 @@ public class DebugTeleOp extends OpMode {
         handleTelemetry();
     }
 
-    public void handleModeControl() {
+    public void handleModeSwitchingControls() {
         if (gamepad1.rightBumperWasPressed()) {
             arm.activateAimingMode();
         } else if (gamepad1.leftBumperWasPressed()) {
