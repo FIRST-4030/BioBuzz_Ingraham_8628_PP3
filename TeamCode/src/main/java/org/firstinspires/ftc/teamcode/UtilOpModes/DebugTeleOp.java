@@ -50,23 +50,9 @@ public class DebugTeleOp extends OpMode {
     }
 
     public void loop() {
-        if (gamepad1.rightBumperWasPressed()) {
-            arm.activateAimingMode();
-        } else if (gamepad1.leftBumperWasPressed()) {
-            arm.activateCollectingMode();
-        }
+        handleModeControl();
 
-        if (gamepad1.bWasPressed()) {
-            driveControlMode = DriveControlMode.MANUAL;
-        } else if (gamepad1.aWasPressed()) {
-            driveControlMode = DriveControlMode.AUTOMATIC;
-        }
-
-        LLResultTypes.FiducialResult bestAprilTag = limelight.getBestHiveAprilTagOrNull();
         double bestTx = 0;
-        if (bestAprilTag != null) {
-            bestTx = bestAprilTag.getTargetXDegrees();
-        }
 
         switch (driveControlMode) {
             case MANUAL:
@@ -82,13 +68,26 @@ public class DebugTeleOp extends OpMode {
         }
 
         arm.update();
+        handleTelemetry();
+    }
 
-
-        telemetry.addData("Best April tag detected", (bestAprilTag != null));
-
-        if (bestAprilTag != null) {
-            telemetry.addData("Best April tag Tx", bestAprilTag.getTargetXDegrees());
+    public void handleModeControl() {
+        if (gamepad1.rightBumperWasPressed()) {
+            arm.activateAimingMode();
+        } else if (gamepad1.leftBumperWasPressed()) {
+            arm.activateCollectingMode();
         }
+
+        if (gamepad1.bWasPressed()) {
+            driveControlMode = DriveControlMode.MANUAL;
+        } else if (gamepad1.aWasPressed()) {
+            driveControlMode = DriveControlMode.AUTOMATIC;
+        }
+
+    }
+
+    public void handleTelemetry() {
+        // TODO: Tx telemetry
 
         telemetry.addLine();
 
