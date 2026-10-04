@@ -13,7 +13,6 @@ import java.util.List;
 
 public class Limelight {
 
-    private Telemetry telemetry;
     public Limelight3A limelight;
 
     public enum HiveCell {
@@ -34,8 +33,10 @@ public class Limelight {
     private final double X_ERROR_THRESHOLD = 10;
     private final double Y_ERROR_THRESHOLD = 10;
 
-    public Limelight(Telemetry telemetry) {
-        this.telemetry = telemetry;
+    public Limelight(HardwareMap hardwareMap) {
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
+        limelight.start(); // This tells Limelight to start looking!
     }
 
     public HiveCell getHiveCellFromTagID(int tagID) {
@@ -110,6 +111,8 @@ public class Limelight {
         List<LLResultTypes.FiducialResult> fiducials = getLatestResult().getFiducialResults();
         List<Integer> visibleTagIDs = new ArrayList<>();
 
+        if (fiducials == null) return;
+
         for (LLResultTypes.FiducialResult fiducial : fiducials) {
             visibleTagIDs.add(fiducial.getFiducialId());
         }
@@ -149,6 +152,8 @@ public class Limelight {
     public boolean canSeeHiveCell(HiveCell hiveCell, List<LLResultTypes.FiducialResult> fiducials ) {
         boolean canSeeHiveCell = false;
 
+        if (fiducials == null) return false;
+
         for (LLResultTypes.FiducialResult fiducial : fiducials) {
             if (getHiveCellFromTagID(fiducial.getFiducialId()) == hiveCell) {
                 canSeeHiveCell = true;
@@ -165,12 +170,6 @@ public class Limelight {
         } else {
             return false;
         }
-    }
-
-    public void init(HardwareMap hardwareMap) {
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
-        limelight.start(); // This tells Limelight to start looking!
     }
 
     public boolean hasValidResult() {

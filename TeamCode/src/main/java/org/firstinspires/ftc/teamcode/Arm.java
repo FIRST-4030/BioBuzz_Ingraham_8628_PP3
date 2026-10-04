@@ -3,6 +3,8 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.util.Range;
 
 public class Arm {
 
@@ -14,7 +16,8 @@ public class Arm {
     private final double COLLECTING_ARM_ANGLE_DEG = 60.0;
     private final double AIMING_ARM_ANGLE_DEG = 130.0;
 
-    private double currentAimingAngleOffset = 0;
+    private ElapsedTime deltaTimer = new ElapsedTime();
+    private double lastTime = 0.0;
 
     public enum ArmMode {
         COLLECTING,
@@ -30,6 +33,9 @@ public class Arm {
     }
 
     public void update() {
+        double currentTime = deltaTimer.seconds();
+        double deltaTime = currentTime - lastTime;
+
         switch (armMode) {
             case COLLECTING:
                 collectingModeUpdate();
@@ -38,6 +44,8 @@ public class Arm {
                 aimingModeUpdate();
                 break;
         }
+
+        lastTime = currentTime;
     }
 
     private void collectingModeUpdate() {
@@ -50,22 +58,14 @@ public class Arm {
     private void aimingModeUpdate() {
         double currentArmAngleDegrees = this.getCurrentArmAngleDegrees();
 
-        if (limelight.hasValidResult()) {
-            currentAimingAngleOffset += limelight.getYError() * 0.5;
+        double angleOffset = 0;
+//        if (limelight.hasValidResult()) {
+//            // TODO: Does this even work?????????
+//            angleOffset = limelight.getYError() + (currentArmAngleDegrees - AIMING_ARM_ANGLE_DEG);
+//        }
 
-            if (AIMING_ARM_ANGLE_DEG + currentAimingAngleOffset > 170) {
-                currentAimingAngleOffset = 170 - AIMING_ARM_ANGLE_DEG;
-            }
-
-            if (AIMING_ARM_ANGLE_DEG + currentAimingAngleOffset < 90) {
-                currentAimingAngleOffset = 90 - AIMING_ARM_ANGLE_DEG;
-            }
-        } else {
-            currentAimingAngleOffset *= 0.95;
-        }
-
-        double power = calculateHingePowerForAngle(currentArmAngleDegrees, AIMING_ARM_ANGLE_DEG + currentAimingAngleOffset);
-
+        double goalArmAngleDegrees = AIMING_ARM_ANGLE_DEG + angleOffset;
+        double power = calculateHingePowerForAngle(currentArmAngleDegrees, goalArmAngleDegrees);
         armHinge.setPower(power);
     }
 
@@ -73,7 +73,7 @@ public class Arm {
 
     private double calculateHingePowerForAngle(double currentArmAngleDegrees, double goalArmAngleDegrees) {
         // TODO: Better feedforward + feedback equation for calculating motor power, not just a lerp
-        return (goalArmAngleDegrees - currentArmAngleDegrees) / 20;
+        return Range.clip((goalArmAngleDegrees - currentArmAngleDegrees) / 20, -1.0, 1.0);
     }
 
     // Getters/setters

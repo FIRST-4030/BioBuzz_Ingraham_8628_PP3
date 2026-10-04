@@ -32,8 +32,7 @@ public class DebugTeleOp extends OpMode {
         controlHub = new ControlHub();
 
         imu = hardwareMap.get(IMU.class, "imu");
-        limelight = new Limelight(telemetry);
-        limelight.init(hardwareMap);
+        limelight = new Limelight(hardwareMap);
         chassis = new Chassis(hardwareMap);
         arm = new Arm(hardwareMap, limelight);
     }
@@ -81,14 +80,15 @@ public class DebugTeleOp extends OpMode {
     }
 
     public void handleTelemetry() {
-        // TODO: Tx telemetry
+        telemetry.addData("Pipeline", limelight.getCurrentPipeline());
+        telemetry.addData("Tx", limelight.getXError());
+        telemetry.addData("Ty", limelight.getYError());
 
         telemetry.addLine();
 
         telemetry.addData("Arm mode", arm.getArmMode());
         telemetry.addData("Driving mode", driveControlMode);
         telemetry.addLine();
-        telemetry.addData("Potentiometer voltage", arm.getPotentiometerVoltage());
         telemetry.addData("Current arm angle (degrees)", arm.getCurrentArmAngleDegrees());
 
         telemetry.update();
