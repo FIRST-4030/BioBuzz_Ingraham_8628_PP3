@@ -49,6 +49,7 @@ public class DebugTeleOp extends OpMode {
 
     public void loop() {
         handleModeSwitchingControls();
+        limelight.switchToBestAimingPipeline();
 
         switch (driveControlMode) {
             case MANUAL:

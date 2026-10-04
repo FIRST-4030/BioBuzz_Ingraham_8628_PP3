@@ -2,11 +2,12 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
+import com.qualcomm.hardware.limelightvision.LLStatus;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.generalUtilities.Blackboard;
-import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,10 +34,16 @@ public class Limelight {
     private final double X_ERROR_THRESHOLD = 10;
     private final double Y_ERROR_THRESHOLD = 10;
 
+    // Used so that we only switch pipelines once the last requested pipeline was successfully
+    // switched to
+    private int lastRequestedPipeline = -1;
+    private ElapsedTime timeSinceLastPipelineSwitch = new ElapsedTime();
+
     public Limelight(HardwareMap hardwareMap) {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
         limelight.start(); // This tells Limelight to start looking!
+        switchToBestAimingPipeline();
     }
 
     public HiveCell getHiveCellFromTagID(int tagID) {
@@ -67,23 +74,41 @@ public class Limelight {
     }
 
     public double getXError() {
-        if (hasValidResult()) {
-            return getLatestResult().getTx();
+        LLResult result = limelight.getLatestResult();
+        boolean resultIsValid = (result != null && result.isValid());
+
+        if (resultIsValid) {
+            return result.getTx();
         } else {
             return 0;
         }
     }
 
     public double getYError() {
-        if (hasValidResult()) {
-            return getLatestResult().getTy();
+        LLResult result = limelight.getLatestResult();
+        boolean resultIsValid = (result != null && result.isValid());
+
+        if (resultIsValid) {
+            return result.getTy();
         } else {
             return 0;
         }
     }
 
+    public boolean limelightPipelineIsCurrent() {
+        if (getCurrentPipeline() == -1) return false;
+        if (lastRequestedPipeline == -1) return true;
+        // If 1.0 second has passed since the switch request, treat it as timed out to allow retry
+        if (timeSinceLastPipelineSwitch.seconds() > 1.0) return true;
+        return lastRequestedPipeline == getCurrentPipeline();
+    }
+
     public void switchToBestAimingPipeline() {
-        if (!hasValidResult()) return;
+        LLResult result = limelight.getLatestResult();
+        boolean resultIsValid = (result != null && result.isValid());
+
+        if (!resultIsValid) return;
+        if (!limelightPipelineIsCurrent()) return;
 
         int currentPipeline = getCurrentPipeline();
         int bestPipeline = currentPipeline;
@@ -95,24 +120,23 @@ public class Limelight {
             case BLUE:
                 if (currentPipeline == RED_ALL_PIPELINE || currentPipeline == RED_LEFT_CENTER_PIPELINE || currentPipeline == RED_RIGHT_CENTER_PIPELINE) {
                     wrongAlliance = true;
-                    limelight.pipelineSwitch(BLUE_ALL_PIPELINE);
+                    pipelineSwitch(BLUE_ALL_PIPELINE);
                 }
                 break;
             case RED:
                 if (currentPipeline == BLUE_ALL_PIPELINE || currentPipeline == BLUE_LEFT_CENTER_PIPELINE || currentPipeline == BLUE_RIGHT_CENTER_PIPELINE) {
                     wrongAlliance = true;
-                    limelight.pipelineSwitch(RED_ALL_PIPELINE);
+                    pipelineSwitch(RED_ALL_PIPELINE);
                 }
                 break;
         }
         if (wrongAlliance) return;
 
 
-        List<LLResultTypes.FiducialResult> fiducials = getLatestResult().getFiducialResults();
-        List<Integer> visibleTagIDs = new ArrayList<>();
-
+        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
         if (fiducials == null) return;
 
+        List<Integer> visibleTagIDs = new ArrayList<>();
         for (LLResultTypes.FiducialResult fiducial : fiducials) {
             visibleTagIDs.add(fiducial.getFiducialId());
         }
@@ -146,7 +170,9 @@ public class Limelight {
                 break;
         }
 
-        if (bestPipeline != currentPipeline) limelight.pipelineSwitch(bestPipeline);
+        if (bestPipeline != currentPipeline) {
+            pipelineSwitch(bestPipeline);
+        }
     }
 
     public boolean canSeeHiveCell(HiveCell hiveCell, List<LLResultTypes.FiducialResult> fiducials ) {
@@ -165,8 +191,11 @@ public class Limelight {
     }
 
     public boolean isOnTarget() {
-        if (hasValidResult()) {
-            return (Math.abs(getXError()) < X_ERROR_THRESHOLD && Math.abs(getYError()) < Y_ERROR_THRESHOLD);
+        LLResult result = limelight.getLatestResult();
+        boolean resultIsValid = (result != null && result.isValid());
+
+        if (resultIsValid) {
+            return (Math.abs(result.getTx()) < X_ERROR_THRESHOLD && Math.abs(result.getTy()) < Y_ERROR_THRESHOLD);
         } else {
             return false;
         }
@@ -177,7 +206,17 @@ public class Limelight {
         return (result != null && result.isValid());
     }
 
-    public int getCurrentPipeline() { return limelight.getStatus().getPipelineIndex(); }
+    public int getCurrentPipeline() {
+        LLStatus status = limelight.getStatus();
+        if (status == null) return -1;
+        return status.getPipelineIndex();
+    }
+
+    public void pipelineSwitch(int pipeline) {
+        lastRequestedPipeline = pipeline;
+        timeSinceLastPipelineSwitch.reset();
+        limelight.pipelineSwitch(pipeline);
+    }
 
     public LLResult getLatestResult() {
         return limelight.getLatestResult();
