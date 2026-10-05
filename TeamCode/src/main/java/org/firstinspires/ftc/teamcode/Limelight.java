@@ -15,6 +15,12 @@ import java.util.List;
 public class Limelight {
 
     public Limelight3A limelight;
+    // Use internal results and status so we can update the data once each loop and use those
+    // same results throughout the loop.
+    // Be careful: changing values on the limelight won't result in a readable change until
+    // the next loop at the earliest.
+    private LLResult internalLatestResult;
+    private LLStatus internalLatestStatus;
 
     public enum HiveCell {
         RED_SCORING,
@@ -24,15 +30,17 @@ public class Limelight {
         NONE,
     }
 
-    public final int RED_ALL_PIPELINE = 0;
-    public final int BLUE_ALL_PIPELINE = 1;
-    public final int RED_LEFT_CENTER_PIPELINE = 2;
-    public final int RED_RIGHT_CENTER_PIPELINE = 3;
-    public final int BLUE_LEFT_CENTER_PIPELINE = 4;
-    public final int BLUE_RIGHT_CENTER_PIPELINE = 5;
+    // Pipeline ID constants
+    public static final int RED_ALL_PIPELINE = 0;
+    public static final int BLUE_ALL_PIPELINE = 1;
+    public static final int RED_LEFT_CENTER_PIPELINE = 2;
+    public static final int RED_RIGHT_CENTER_PIPELINE = 3;
+    public static final int BLUE_LEFT_CENTER_PIPELINE = 4;
+    public static final int BLUE_RIGHT_CENTER_PIPELINE = 5;
 
-    private final double X_ERROR_THRESHOLD = 10;
-    private final double Y_ERROR_THRESHOLD = 10;
+    // Thresholds for aiming
+    private final double X_ERROR_THRESHOLD = 1.5;
+    private final double Y_ERROR_THRESHOLD = 1.5;
 
     // Used so that we only switch pipelines once the last requested pipeline was successfully
     // switched to
@@ -43,7 +51,11 @@ public class Limelight {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
         limelight.start(); // This tells Limelight to start looking!
-        switchToBestAimingPipeline();
+    }
+
+    public void updateData() {
+        internalLatestResult = limelight.getLatestResult();
+        internalLatestStatus = limelight.getStatus();
     }
 
     public HiveCell getHiveCellFromTagID(int tagID) {
@@ -73,44 +85,38 @@ public class Limelight {
         }
     }
 
-    public double getXError() {
-        LLResult result = limelight.getLatestResult();
-        boolean resultIsValid = (result != null && result.isValid());
-
-        if (resultIsValid) {
-            return result.getTx();
-        } else {
-            return 0;
-        }
-    }
-
-    public double getYError() {
-        LLResult result = limelight.getLatestResult();
-        boolean resultIsValid = (result != null && result.isValid());
-
-        if (resultIsValid) {
-            return result.getTy();
-        } else {
-            return 0;
+    public String getCurrentPipelineName() {
+        switch (getCurrentPipelineID()) {
+            case 0:
+                return "RED: all tags";
+            case 1:
+                return "BLUE: all tags";
+            case 2:
+                return "RED: aiming center-left";
+            case 3:
+                return "RED: aiming center-right";
+            case 4:
+                return "BLUE: aiming center-left";
+            case 5:
+                return "BLUE: aiming center-right";
+            default:
+                return "Unnamed pipeline";
         }
     }
 
     public boolean limelightPipelineIsCurrent() {
-        if (getCurrentPipeline() == -1) return false;
+        if (getCurrentPipelineID() == -1) return false;
         if (lastRequestedPipeline == -1) return true;
         // If 1.0 second has passed since the switch request, treat it as timed out to allow retry
         if (timeSinceLastPipelineSwitch.seconds() > 1.0) return true;
-        return lastRequestedPipeline == getCurrentPipeline();
+        return lastRequestedPipeline == getCurrentPipelineID();
     }
 
     public void switchToBestAimingPipeline() {
-        LLResult result = limelight.getLatestResult();
-        boolean resultIsValid = (result != null && result.isValid());
-
-        if (!resultIsValid) return;
+        if (!latestResultIsValid()) return;
         if (!limelightPipelineIsCurrent()) return;
 
-        int currentPipeline = getCurrentPipeline();
+        int currentPipeline = getCurrentPipelineID();
         int bestPipeline = currentPipeline;
 
         // If for some reason we are aiming for the blue hives when we are on the red alliance,
@@ -133,7 +139,7 @@ public class Limelight {
         if (wrongAlliance) return;
 
 
-        List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
+        List<LLResultTypes.FiducialResult> fiducials = internalLatestResult.getFiducialResults();
         if (fiducials == null) return;
 
         List<Integer> visibleTagIDs = new ArrayList<>();
@@ -175,9 +181,10 @@ public class Limelight {
         }
     }
 
-    public boolean canSeeHiveCell(HiveCell hiveCell, List<LLResultTypes.FiducialResult> fiducials ) {
+    public boolean canSeeHiveCell(HiveCell hiveCell) {
         boolean canSeeHiveCell = false;
 
+        List<LLResultTypes.FiducialResult> fiducials = internalLatestResult.getFiducialResults();
         if (fiducials == null) return false;
 
         for (LLResultTypes.FiducialResult fiducial : fiducials) {
@@ -190,26 +197,41 @@ public class Limelight {
         return canSeeHiveCell;
     }
 
-    public boolean isOnTarget() {
-        LLResult result = limelight.getLatestResult();
-        boolean resultIsValid = (result != null && result.isValid());
+    public boolean latestResultIsValid() {
+        return (internalLatestResult != null && internalLatestResult.isValid());
+    }
 
-        if (resultIsValid) {
-            return (Math.abs(result.getTx()) < X_ERROR_THRESHOLD && Math.abs(result.getTy()) < Y_ERROR_THRESHOLD);
+    public boolean latestStatusIsValid() {
+        return (internalLatestStatus != null);
+    }
+
+    public int getCurrentPipelineID() {
+        if (!latestResultIsValid()) return -1;
+        return internalLatestStatus.getPipelineIndex();
+    }
+
+    public double getXError() {
+        if (latestResultIsValid()) {
+            return internalLatestResult.getTx();
+        } else {
+            return 0;
+        }
+    }
+
+    public boolean isOnTarget() {
+        if (latestResultIsValid()) {
+            return (Math.abs(internalLatestResult.getTx()) < X_ERROR_THRESHOLD && Math.abs(internalLatestResult.getTy()) < Y_ERROR_THRESHOLD);
         } else {
             return false;
         }
     }
 
-    public boolean hasValidResult() {
-        LLResult result = limelight.getLatestResult();
-        return (result != null && result.isValid());
-    }
-
-    public int getCurrentPipeline() {
-        LLStatus status = limelight.getStatus();
-        if (status == null) return -1;
-        return status.getPipelineIndex();
+    public double getYError() {
+        if (latestResultIsValid()) {
+            return internalLatestResult.getTy();
+        } else {
+            return 0;
+        }
     }
 
     public void pipelineSwitch(int pipeline) {
@@ -219,6 +241,6 @@ public class Limelight {
     }
 
     public LLResult getLatestResult() {
-        return limelight.getLatestResult();
+        return internalLatestResult;
     }
 }

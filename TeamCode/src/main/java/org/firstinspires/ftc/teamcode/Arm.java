@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 public class Arm {
@@ -58,22 +57,33 @@ public class Arm {
 
     private void aimingModeUpdate() {
         double currentArmAngleDegrees = this.getCurrentArmAngleDegrees();
+        double goalArmAngleDegrees = AIMING_ARM_ANGLE_DEG;
 
         double angleOffset = 0;
-//        if (limelight.hasValidResult()) {
-//            // TODO: Does this even work?????????
-//            angleOffset = limelight.getYError() + (currentArmAngleDegrees - AIMING_ARM_ANGLE_DEG);
-//        }
 
-        double goalArmAngleDegrees = AIMING_ARM_ANGLE_DEG + angleOffset;
+        if (limelight != null && limelight.latestResultIsValid()) {
+            angleOffset = limelight.getYError();
+            goalArmAngleDegrees = currentArmAngleDegrees + angleOffset;
+        }
+
         double power = calculateHingePowerForAngle(currentArmAngleDegrees, goalArmAngleDegrees);
         armHinge.setPower(power);
     }
 
     private double calculateHingePowerForAngle(double currentArmAngleDegrees, double goalArmAngleDegrees) {
-        // TODO: Better feedforward + feedback equation for calculating motor power, not just a lerp
         double clippedGoalArmAngleDegrees = Range.clip(goalArmAngleDegrees, MIN_ANGLE_DEG, MAX_ANGLE_DEG);
+
         return Range.clip((clippedGoalArmAngleDegrees - currentArmAngleDegrees) / 20, -1.0, 1.0);
+
+        // TODO: Want to try doing it this way too:
+//        double error = clippedGoalArmAngleDegrees - currentArmAngleDegrees;
+//        double kP = 0.03;
+//        double kG = 0.15; // Tuning parameter for gravity compensation
+//
+//        // Angle is relative to ground (90° = horizontal)
+//        double feedForward = kG * Math.cos(Math.toRadians(currentArmAngleDegrees));
+//        double power = (error * kP) + feedForward;
+//        return Range.clip(power, -1.0, 1.0);
     }
 
     public double getCurrentArmAngleDegrees() {

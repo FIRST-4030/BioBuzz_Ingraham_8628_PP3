@@ -38,6 +38,7 @@ public class DebugTeleOp extends OpMode {
     }
 
     public void init_loop() {
+        limelight.updateData(); // This line is vital; and should be called first in the loop
         controlHub.processBotIdentificationTelemetry(telemetry);
         Blackboard.initLoopProcess(telemetry, gamepad1);
     }
@@ -48,6 +49,7 @@ public class DebugTeleOp extends OpMode {
     }
 
     public void loop() {
+        limelight.updateData(); // This line is vital; and should be called first in the loop
         handleModeSwitchingControls();
         limelight.switchToBestAimingPipeline();
 
@@ -81,7 +83,7 @@ public class DebugTeleOp extends OpMode {
     }
 
     public void handleTelemetry() {
-        telemetry.addData("Pipeline", limelight.getCurrentPipeline());
+        telemetry.addData("Pipeline", limelight.getCurrentPipelineName());
         telemetry.addData("Tx", limelight.getXError());
         telemetry.addData("Ty", limelight.getYError());
 
