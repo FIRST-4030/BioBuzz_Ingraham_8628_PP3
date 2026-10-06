@@ -61,7 +61,7 @@ public class Arm {
 
         double angleOffset = 0;
 
-        if (limelight != null && limelight.latestResultIsValid()) {
+        if (limelight != null && limelight.resultHasGoodTargets()) {
             angleOffset = limelight.getYError();
             goalArmAngleDegrees = currentArmAngleDegrees + angleOffset;
         }

@@ -104,6 +104,21 @@ public class Limelight {
         }
     }
 
+    public Blackboard.Alliance getAllianceOfPipeline(int pipelineId) {
+        switch (pipelineId) {
+            case RED_ALL_PIPELINE:
+            case RED_LEFT_CENTER_PIPELINE:
+            case RED_RIGHT_CENTER_PIPELINE:
+                return Blackboard.Alliance.RED;
+            case BLUE_ALL_PIPELINE:
+            case BLUE_LEFT_CENTER_PIPELINE:
+            case BLUE_RIGHT_CENTER_PIPELINE:
+                return Blackboard.Alliance.BLUE;
+            default:
+                return Blackboard.Alliance.UNKNOWN;
+        }
+    }
+
     public boolean limelightPipelineIsCurrent() {
         if (getCurrentPipelineID() == -1) return false;
         if (lastRequestedPipeline == -1) return true;
@@ -113,31 +128,31 @@ public class Limelight {
     }
 
     public void switchToBestAimingPipeline() {
-        if (!latestResultIsValid()) return;
         if (!limelightPipelineIsCurrent()) return;
 
         int currentPipeline = getCurrentPipelineID();
-        int bestPipeline = currentPipeline;
 
-        // If for some reason we are aiming for the blue hives when we are on the red alliance,
-        // or vice versa, switch the pipeline to the appropriate alliance!
-        boolean wrongAlliance = false;
-        switch (Blackboard.getAlliance()) {
-            case BLUE:
-                if (currentPipeline == RED_ALL_PIPELINE || currentPipeline == RED_LEFT_CENTER_PIPELINE || currentPipeline == RED_RIGHT_CENTER_PIPELINE) {
-                    wrongAlliance = true;
-                    pipelineSwitch(BLUE_ALL_PIPELINE);
-                }
-                break;
-            case RED:
-                if (currentPipeline == BLUE_ALL_PIPELINE || currentPipeline == BLUE_LEFT_CENTER_PIPELINE || currentPipeline == BLUE_RIGHT_CENTER_PIPELINE) {
-                    wrongAlliance = true;
-                    pipelineSwitch(RED_ALL_PIPELINE);
-                }
-                break;
+        // --- FALLBACKS ---
+
+        Blackboard.Alliance alliance = Blackboard.getAlliance();
+        if (alliance == Blackboard.Alliance.BLUE && getAllianceOfPipeline(currentPipeline) != Blackboard.Alliance.BLUE) {
+            pipelineSwitch(BLUE_ALL_PIPELINE);
+            return;
+        } else if (alliance == Blackboard.Alliance.RED && getAllianceOfPipeline(currentPipeline) != Blackboard.Alliance.RED) {
+            pipelineSwitch(RED_ALL_PIPELINE);
+            return;
         }
-        if (wrongAlliance) return;
 
+        if (!resultHasGoodTargets()) {
+            if (currentPipeline == RED_LEFT_CENTER_PIPELINE || currentPipeline == RED_RIGHT_CENTER_PIPELINE) {
+                pipelineSwitch(RED_ALL_PIPELINE);
+            } else if (currentPipeline == BLUE_LEFT_CENTER_PIPELINE || currentPipeline == BLUE_RIGHT_CENTER_PIPELINE) {
+                pipelineSwitch(BLUE_ALL_PIPELINE);
+            }
+            return;
+        };
+
+        // --- AIMING PIPELINES ---
 
         List<LLResultTypes.FiducialResult> fiducials = internalLatestResult.getFiducialResults();
         if (fiducials == null) return;
@@ -150,34 +165,30 @@ public class Limelight {
         switch (currentPipeline) {
             case RED_ALL_PIPELINE:
                 if (visibleTagIDs.contains(31) || visibleTagIDs.contains(35)) {
-                    bestPipeline = RED_LEFT_CENTER_PIPELINE;
+                    pipelineSwitch(RED_LEFT_CENTER_PIPELINE);
                 } else if (visibleTagIDs.contains(32) || visibleTagIDs.contains(36)) {
-                    bestPipeline = RED_RIGHT_CENTER_PIPELINE;
+                    pipelineSwitch(RED_RIGHT_CENTER_PIPELINE);
                 }
                 break;
             case BLUE_ALL_PIPELINE:
                 if (visibleTagIDs.contains(39) || visibleTagIDs.contains(43)) {
-                    bestPipeline = BLUE_LEFT_CENTER_PIPELINE;
+                    pipelineSwitch(BLUE_LEFT_CENTER_PIPELINE);
                 } else if (visibleTagIDs.contains(40) || visibleTagIDs.contains(44)) {
-                    bestPipeline = BLUE_RIGHT_CENTER_PIPELINE;
+                    pipelineSwitch(BLUE_RIGHT_CENTER_PIPELINE);
                 }
                 break;
             case RED_LEFT_CENTER_PIPELINE:
-                if (!visibleTagIDs.contains(31) && !visibleTagIDs.contains(35)) bestPipeline = RED_ALL_PIPELINE;
+                if (!visibleTagIDs.contains(31) && !visibleTagIDs.contains(35)) pipelineSwitch(RED_ALL_PIPELINE);
                 break;
             case RED_RIGHT_CENTER_PIPELINE:
-                if (!visibleTagIDs.contains(32) && !visibleTagIDs.contains(36)) bestPipeline = RED_ALL_PIPELINE;
+                if (!visibleTagIDs.contains(32) && !visibleTagIDs.contains(36)) pipelineSwitch(RED_ALL_PIPELINE);
                 break;
             case BLUE_LEFT_CENTER_PIPELINE:
-                if (!visibleTagIDs.contains(39) && !visibleTagIDs.contains(43)) bestPipeline = BLUE_ALL_PIPELINE;
+                if (!visibleTagIDs.contains(39) && !visibleTagIDs.contains(43)) pipelineSwitch(BLUE_ALL_PIPELINE);
                 break;
             case BLUE_RIGHT_CENTER_PIPELINE:
-                if (!visibleTagIDs.contains(40) && !visibleTagIDs.contains(44)) bestPipeline = BLUE_ALL_PIPELINE;
+                if (!visibleTagIDs.contains(40) && !visibleTagIDs.contains(44)) pipelineSwitch(BLUE_ALL_PIPELINE);
                 break;
-        }
-
-        if (bestPipeline != currentPipeline) {
-            pipelineSwitch(bestPipeline);
         }
     }
 
@@ -197,7 +208,7 @@ public class Limelight {
         return canSeeHiveCell;
     }
 
-    public boolean latestResultIsValid() {
+    public boolean resultHasGoodTargets() {
         return (internalLatestResult != null && internalLatestResult.isValid());
     }
 
@@ -206,12 +217,12 @@ public class Limelight {
     }
 
     public int getCurrentPipelineID() {
-        if (!latestResultIsValid()) return -1;
+        if (!latestStatusIsValid()) return -1;
         return internalLatestStatus.getPipelineIndex();
     }
 
     public double getXError() {
-        if (latestResultIsValid()) {
+        if (resultHasGoodTargets()) {
             return internalLatestResult.getTx();
         } else {
             return 0;
@@ -219,7 +230,7 @@ public class Limelight {
     }
 
     public boolean isOnTarget() {
-        if (latestResultIsValid()) {
+        if (resultHasGoodTargets()) {
             return (Math.abs(internalLatestResult.getTx()) < X_ERROR_THRESHOLD && Math.abs(internalLatestResult.getTy()) < Y_ERROR_THRESHOLD);
         } else {
             return false;
@@ -227,7 +238,7 @@ public class Limelight {
     }
 
     public double getYError() {
-        if (latestResultIsValid()) {
+        if (resultHasGoodTargets()) {
             return internalLatestResult.getTy();
         } else {
             return 0;
