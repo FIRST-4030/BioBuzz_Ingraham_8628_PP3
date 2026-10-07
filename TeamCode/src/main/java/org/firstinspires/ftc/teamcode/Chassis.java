@@ -1,7 +1,9 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
@@ -73,6 +75,19 @@ public class Chassis {
 //        frontRightDrive.setPower(frontRightPower);
 //        backLeftDrive.setPower(backLeftPower);
 //        backRightDrive.setPower(backRightPower);
+    }
+
+    public void lockedOnDrive(double forward, double right, Gamepad gamepad, Limelight limelight) {
+        // TODO: Better PID equation for this instead of just a lerp
+        this.drive(gamepad.left_stick_y, -gamepad.left_stick_x, limelight.getXError() / 35);
+    }
+
+    public void chasingDrive(double forward, double right, Gamepad gamepad, Limelight limelight) {
+        if (limelight.resultHasGoodTargets()) {
+            double weightedTargetAreaPercentage = Range.clip(limelight.getLatestResult().getTa() * 2, 0, 1);
+            this.drive(-1 + weightedTargetAreaPercentage, limelight.getXError() / 20, limelight.getXError() / 35);
+        }
+        this.drive(0, 0, 0);
     }
 
 //    public void setMaxPower(double maxPower) {

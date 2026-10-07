@@ -37,15 +37,16 @@ public class Limelight {
     public static final int RED_RIGHT_CENTER_PIPELINE = 3;
     public static final int BLUE_LEFT_CENTER_PIPELINE = 4;
     public static final int BLUE_RIGHT_CENTER_PIPELINE = 5;
+    public static final int POLLEN_PIPELINE = 6;
 
     // Thresholds for aiming
-    private final double X_ERROR_THRESHOLD = 1.5;
-    private final double Y_ERROR_THRESHOLD = 1.5;
+    private static final double X_ERROR_THRESHOLD = 1.5;
+    private static final double Y_ERROR_THRESHOLD = 1.5;
 
     // Used so that we only switch pipelines once the last requested pipeline was successfully
     // switched to
     private int lastRequestedPipeline = -1;
-    private ElapsedTime timeSinceLastPipelineSwitch = new ElapsedTime();
+    private final ElapsedTime timeSinceLastPipelineSwitch = new ElapsedTime();
 
     public Limelight(HardwareMap hardwareMap) {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
@@ -127,7 +128,12 @@ public class Limelight {
         return lastRequestedPipeline == getCurrentPipelineID();
     }
 
-    public void switchToBestAimingPipeline() {
+    public void lookForBestCollectingPipeline() {
+        if (!limelightPipelineIsCurrent()) return;
+        pipelineSwitch(POLLEN_PIPELINE);
+    }
+
+    public void lookForBestAimingPipeline() {
         if (!limelightPipelineIsCurrent()) return;
 
         int currentPipeline = getCurrentPipelineID();
@@ -150,17 +156,14 @@ public class Limelight {
                 pipelineSwitch(BLUE_ALL_PIPELINE);
             }
             return;
-        };
+        }
 
         // --- AIMING PIPELINES ---
 
         List<LLResultTypes.FiducialResult> fiducials = internalLatestResult.getFiducialResults();
         if (fiducials == null) return;
 
-        List<Integer> visibleTagIDs = new ArrayList<>();
-        for (LLResultTypes.FiducialResult fiducial : fiducials) {
-            visibleTagIDs.add(fiducial.getFiducialId());
-        }
+        List<Integer> visibleTagIDs = getTagIDsFromFiducials(fiducials);
 
         switch (currentPipeline) {
             case RED_ALL_PIPELINE:
@@ -208,6 +211,15 @@ public class Limelight {
         return canSeeHiveCell;
     }
 
+    public List<Integer> getTagIDsFromFiducials(List<LLResultTypes.FiducialResult> fiducials) {
+        List<Integer> visibleTagIDs = new ArrayList<>();
+        for (LLResultTypes.FiducialResult fiducial : fiducials) {
+            visibleTagIDs.add(fiducial.getFiducialId());
+        }
+
+        return visibleTagIDs;
+    }
+
     public boolean resultHasGoodTargets() {
         return (internalLatestResult != null && internalLatestResult.isValid());
     }
@@ -249,6 +261,10 @@ public class Limelight {
         lastRequestedPipeline = pipeline;
         timeSinceLastPipelineSwitch.reset();
         limelight.pipelineSwitch(pipeline);
+    }
+
+    public ElapsedTime getTimeSinceLastPipelineSwitch() {
+        return timeSinceLastPipelineSwitch;
     }
 
     public LLResult getLatestResult() {

@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.UtilOpModes;
 
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -9,6 +10,8 @@ import org.firstinspires.ftc.teamcode.Arm;
 import org.firstinspires.ftc.teamcode.Chassis;
 import org.firstinspires.ftc.teamcode.ControlHub;
 import org.firstinspires.ftc.teamcode.Limelight;
+
+import java.util.List;
 
 @TeleOp(name = "Debug TeleOp", group="Util")
 public class DebugTeleOp extends OpMode {
@@ -21,11 +24,11 @@ public class DebugTeleOp extends OpMode {
     Arm arm;
 
     enum DriveControlMode {
-        MANUAL,
-        AUTOMATIC,
+        COLLECTING,
+        AIMING,
     }
 
-    DriveControlMode driveControlMode = DriveControlMode.MANUAL;
+    DriveControlMode driveControlMode = DriveControlMode.COLLECTING;
 
     @Override
     public void init() {
@@ -38,28 +41,31 @@ public class DebugTeleOp extends OpMode {
     }
 
     public void init_loop() {
-        limelight.updateData(); // This line is vital; and should be called first in the loop
+        limelight.updateData(); // This line is vital, and should be called first in the loop
         controlHub.processBotIdentificationTelemetry(telemetry);
         Blackboard.initLoopProcess(telemetry, gamepad1);
     }
 
     public void start() {
-        arm.activateCollectingMode();
-        limelight.switchToBestAimingPipeline();
+        arm.collectingPositionMode();
+        limelight.lookForBestAimingPipeline();
     }
 
     public void loop() {
-        limelight.updateData(); // This line is vital; and should be called first in the loop
+        limelight.updateData(); // This line is vital, and should be called first in the loop
         handleModeSwitchingControls();
-        limelight.switchToBestAimingPipeline();
 
         switch (driveControlMode) {
-            case MANUAL:
+            case COLLECTING:
+//                limelight.lookForBestCollectingPipeline();
                 chassis.drive(gamepad1.left_stick_y, -gamepad1.left_stick_x, gamepad1.right_stick_x);
                 break;
-            case AUTOMATIC:
-                // TODO: Better PID equation for this instead of just a lerp
-                chassis.drive(gamepad1.left_stick_y, -gamepad1.left_stick_x, limelight.getXError() / 35);
+            case AIMING:
+                limelight.lookForBestAimingPipeline();
+                chassis.lockedOnDrive(gamepad1.left_stick_y, -gamepad1.left_stick_x, gamepad1, limelight);
+                break;
+            default:
+                chassis.stopMotors();
                 break;
         }
 
@@ -68,31 +74,38 @@ public class DebugTeleOp extends OpMode {
     }
 
     public void handleModeSwitchingControls() {
-        if (gamepad1.rightBumperWasPressed()) {
-            arm.activateAimingMode();
-        } else if (gamepad1.leftBumperWasPressed()) {
-            arm.activateCollectingMode();
+        if (gamepad1.leftBumperWasPressed()) {
+            driveControlMode = DriveControlMode.COLLECTING;
+            arm.collectingPositionMode();
+        } else if (gamepad1.rightBumperWasPressed()) {
+            driveControlMode = DriveControlMode.AIMING;
+            arm.aimingPositionMode();
         }
-
-        if (gamepad1.bWasPressed()) {
-            driveControlMode = DriveControlMode.MANUAL;
-        } else if (gamepad1.aWasPressed()) {
-            driveControlMode = DriveControlMode.AUTOMATIC;
-        }
-
     }
 
     public void handleTelemetry() {
-        telemetry.addData("Pipeline", limelight.getCurrentPipelineName());
-        telemetry.addData("Tx", limelight.getXError());
-        telemetry.addData("Ty", limelight.getYError());
-
-        telemetry.addLine();
-
-        telemetry.addData("Arm mode", arm.getArmMode());
+        telemetry.addLine("LB: Aiming mode, RB: Collecting mode");
+        telemetry.addLine("-------");
+        telemetry.addData("Arm mode", arm.getArmPositionMode());
         telemetry.addData("Driving mode", driveControlMode);
+        telemetry.addData("Current arm angle (degrees)", arm.getArmAngleDegrees());
+
         telemetry.addLine();
-        telemetry.addData("Current arm angle (degrees)", arm.getCurrentArmAngleDegrees());
+
+        telemetry.addData("Alliance", Blackboard.getAlliance());
+        telemetry.addData("Pipeline", limelight.getCurrentPipelineName());
+        telemetry.addData("MS since pipeline switch", limelight.getTimeSinceLastPipelineSwitch().milliseconds());
+
+        telemetry.addLine();
+
+        if (limelight.resultHasGoodTargets()) {
+            List<LLResultTypes.FiducialResult> fiducials = limelight.getLatestResult().getFiducialResults();
+            telemetry.addData("On target", limelight.isOnTarget());
+            telemetry.addData("Tx", limelight.getXError());
+            telemetry.addData("Ty", limelight.getYError());
+        } else {
+            telemetry.addLine("No good targets visible");
+        }
 
         telemetry.update();
     }
