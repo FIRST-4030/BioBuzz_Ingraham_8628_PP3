@@ -77,9 +77,9 @@ public class Chassis {
 //        backRightDrive.setPower(backRightPower);
     }
 
-    public void lockedOnDrive(double forward, double right, Gamepad gamepad, Limelight limelight) {
+    public void lockedOnDrive(double forward, double right, Limelight limelight) {
         // TODO: Better PID equation for this instead of just a lerp
-        this.drive(gamepad.left_stick_y, -gamepad.left_stick_x, limelight.getXError() / 35);
+        this.drive(forward, right, limelight.getXError() / 35);
     }
 
     public void chasingDrive(double forward, double right, Gamepad gamepad, Limelight limelight) {

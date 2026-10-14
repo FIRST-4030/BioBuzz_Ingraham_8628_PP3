@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.UtilOpModes;
 
-import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -11,8 +10,6 @@ import org.firstinspires.ftc.teamcode.Chassis;
 import org.firstinspires.ftc.teamcode.ControlHub;
 import org.firstinspires.ftc.teamcode.Limelight;
 
-import java.util.List;
-
 @TeleOp(name = "Debug TeleOp", group="Util")
 public class DebugTeleOp extends OpMode {
 
@@ -22,13 +19,6 @@ public class DebugTeleOp extends OpMode {
     Limelight limelight;
     Chassis chassis;
     Arm arm;
-
-    enum DriveControlMode {
-        COLLECTING,
-        AIMING,
-    }
-
-    DriveControlMode driveControlMode = DriveControlMode.COLLECTING;
 
     @Override
     public void init() {
@@ -47,7 +37,7 @@ public class DebugTeleOp extends OpMode {
     }
 
     public void start() {
-        arm.collectingPositionMode();
+        arm.collectingMode();
         limelight.lookForBestAimingPipeline();
     }
 
@@ -55,14 +45,18 @@ public class DebugTeleOp extends OpMode {
         limelight.updateData(); // This line is vital, and should be called first in the loop
         handleModeSwitchingControls();
 
-        switch (driveControlMode) {
+        switch (arm.getMode()) {
             case COLLECTING:
-//                limelight.lookForBestCollectingPipeline();
+                limelight.lookForBestCollectingPipeline();
                 chassis.drive(gamepad1.left_stick_y, -gamepad1.left_stick_x, gamepad1.right_stick_x);
                 break;
             case AIMING:
                 limelight.lookForBestAimingPipeline();
-                chassis.lockedOnDrive(gamepad1.left_stick_y, -gamepad1.left_stick_x, gamepad1, limelight);
+                if (arm.isShooting()) {
+                    chassis.lockedOnDrive(gamepad1.left_stick_y, -gamepad1.left_stick_x, limelight);
+                } else {
+                    chassis.drive(gamepad1.left_stick_y, -gamepad1.left_stick_x, gamepad1.right_stick_x);
+                }
                 break;
             default:
                 chassis.stopMotors();
@@ -75,34 +69,45 @@ public class DebugTeleOp extends OpMode {
 
     public void handleModeSwitchingControls() {
         if (gamepad1.leftBumperWasPressed()) {
-            driveControlMode = DriveControlMode.COLLECTING;
-            arm.collectingPositionMode();
+            arm.collectingMode();
+            arm.stopShooting();
+            arm.startCollecting();
         } else if (gamepad1.rightBumperWasPressed()) {
-            driveControlMode = DriveControlMode.AIMING;
-            arm.aimingPositionMode();
+            arm.aimingMode();
+            arm.stopCollecting();
+            arm.startShooting();
         }
     }
 
     public void handleTelemetry() {
+//        boolean readyToShoot = (arm.getMode() == Arm.ArmPositionMode.AIMING &&
+//                limelight.isOnTarget() &&
+//                arm.shooterFlywheel.atSpeed());
+        boolean readyToShoot = (arm.getMode() == Arm.ArmPositionMode.AIMING && limelight.isOnTarget());
+
         telemetry.addLine("LB: Aiming mode, RB: Collecting mode");
+        if (!(Blackboard.getAlliance() == Blackboard.Alliance.RED || Blackboard.getAlliance() == Blackboard.Alliance.BLUE)) {
+            telemetry.addLine("WARNING: ALLIANCE UNSET! You should re-init!");
+        } else {
+            telemetry.addData("Alliance", Blackboard.getAlliance());
+        }
         telemetry.addLine("-------");
-        telemetry.addData("Arm mode", arm.getArmPositionMode());
-        telemetry.addData("Driving mode", driveControlMode);
+        telemetry.addData("Mode", arm.getMode());
         telemetry.addData("Current arm angle (degrees)", arm.getArmAngleDegrees());
+        telemetry.addData("Ready to shoot?", readyToShoot);
 
         telemetry.addLine();
 
-        telemetry.addData("Alliance", Blackboard.getAlliance());
         telemetry.addData("Pipeline", limelight.getCurrentPipelineName());
         telemetry.addData("MS since pipeline switch", limelight.getTimeSinceLastPipelineSwitch().milliseconds());
 
         telemetry.addLine();
 
         if (limelight.resultHasGoodTargets()) {
-            List<LLResultTypes.FiducialResult> fiducials = limelight.getLatestResult().getFiducialResults();
             telemetry.addData("On target", limelight.isOnTarget());
             telemetry.addData("Tx", limelight.getXError());
             telemetry.addData("Ty", limelight.getYError());
+            telemetry.addData("Ta", limelight.getTa());
         } else {
             telemetry.addLine("No good targets visible");
         }

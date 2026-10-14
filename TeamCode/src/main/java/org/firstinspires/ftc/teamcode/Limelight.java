@@ -33,17 +33,13 @@ public class Limelight {
     // Pipeline ID constants
     public static final int RED_ALL_PIPELINE = 0;
     public static final int BLUE_ALL_PIPELINE = 1;
-    public static final int RED_LEFT_CENTER_PIPELINE = 2;
-    public static final int RED_RIGHT_CENTER_PIPELINE = 3;
-    public static final int BLUE_LEFT_CENTER_PIPELINE = 4;
-    public static final int BLUE_RIGHT_CENTER_PIPELINE = 5;
     public static final int POLLEN_PIPELINE = 6;
 
     // Thresholds for aiming
-    private static final double X_ERROR_THRESHOLD = 1.5;
-    private static final double Y_ERROR_THRESHOLD = 1.5;
+    private static final double X_ERROR_THRESHOLD = 5;
+    private static final double Y_ERROR_THRESHOLD = 5;
 
-    // Used so that we only switch pipelines once the last requested pipeline was successfully
+    // Used so that we only switch pipelines once the last requested pipeline has been successfully
     // switched to
     private int lastRequestedPipeline = -1;
     private final ElapsedTime timeSinceLastPipelineSwitch = new ElapsedTime();
@@ -88,18 +84,12 @@ public class Limelight {
 
     public String getCurrentPipelineName() {
         switch (getCurrentPipelineID()) {
-            case 0:
+            case RED_ALL_PIPELINE:
                 return "RED: all tags";
-            case 1:
+            case BLUE_ALL_PIPELINE:
                 return "BLUE: all tags";
-            case 2:
-                return "RED: aiming center-left";
-            case 3:
-                return "RED: aiming center-right";
-            case 4:
-                return "BLUE: aiming center-left";
-            case 5:
-                return "BLUE: aiming center-right";
+            case POLLEN_PIPELINE:
+                return "POLLEN";
             default:
                 return "Unnamed pipeline";
         }
@@ -108,12 +98,8 @@ public class Limelight {
     public Blackboard.Alliance getAllianceOfPipeline(int pipelineId) {
         switch (pipelineId) {
             case RED_ALL_PIPELINE:
-            case RED_LEFT_CENTER_PIPELINE:
-            case RED_RIGHT_CENTER_PIPELINE:
                 return Blackboard.Alliance.RED;
             case BLUE_ALL_PIPELINE:
-            case BLUE_LEFT_CENTER_PIPELINE:
-            case BLUE_RIGHT_CENTER_PIPELINE:
                 return Blackboard.Alliance.BLUE;
             default:
                 return Blackboard.Alliance.UNKNOWN;
@@ -130,6 +116,7 @@ public class Limelight {
 
     public void lookForBestCollectingPipeline() {
         if (!limelightPipelineIsCurrent()) return;
+
         pipelineSwitch(POLLEN_PIPELINE);
     }
 
@@ -138,60 +125,11 @@ public class Limelight {
 
         int currentPipeline = getCurrentPipelineID();
 
-        // --- FALLBACKS ---
-
         Blackboard.Alliance alliance = Blackboard.getAlliance();
         if (alliance == Blackboard.Alliance.BLUE && getAllianceOfPipeline(currentPipeline) != Blackboard.Alliance.BLUE) {
             pipelineSwitch(BLUE_ALL_PIPELINE);
-            return;
         } else if (alliance == Blackboard.Alliance.RED && getAllianceOfPipeline(currentPipeline) != Blackboard.Alliance.RED) {
             pipelineSwitch(RED_ALL_PIPELINE);
-            return;
-        }
-
-        if (!resultHasGoodTargets()) {
-            if (currentPipeline == RED_LEFT_CENTER_PIPELINE || currentPipeline == RED_RIGHT_CENTER_PIPELINE) {
-                pipelineSwitch(RED_ALL_PIPELINE);
-            } else if (currentPipeline == BLUE_LEFT_CENTER_PIPELINE || currentPipeline == BLUE_RIGHT_CENTER_PIPELINE) {
-                pipelineSwitch(BLUE_ALL_PIPELINE);
-            }
-            return;
-        }
-
-        // --- AIMING PIPELINES ---
-
-        List<LLResultTypes.FiducialResult> fiducials = internalLatestResult.getFiducialResults();
-        if (fiducials == null) return;
-
-        List<Integer> visibleTagIDs = getTagIDsFromFiducials(fiducials);
-
-        switch (currentPipeline) {
-            case RED_ALL_PIPELINE:
-                if (visibleTagIDs.contains(31) || visibleTagIDs.contains(35)) {
-                    pipelineSwitch(RED_LEFT_CENTER_PIPELINE);
-                } else if (visibleTagIDs.contains(32) || visibleTagIDs.contains(36)) {
-                    pipelineSwitch(RED_RIGHT_CENTER_PIPELINE);
-                }
-                break;
-            case BLUE_ALL_PIPELINE:
-                if (visibleTagIDs.contains(39) || visibleTagIDs.contains(43)) {
-                    pipelineSwitch(BLUE_LEFT_CENTER_PIPELINE);
-                } else if (visibleTagIDs.contains(40) || visibleTagIDs.contains(44)) {
-                    pipelineSwitch(BLUE_RIGHT_CENTER_PIPELINE);
-                }
-                break;
-            case RED_LEFT_CENTER_PIPELINE:
-                if (!visibleTagIDs.contains(31) && !visibleTagIDs.contains(35)) pipelineSwitch(RED_ALL_PIPELINE);
-                break;
-            case RED_RIGHT_CENTER_PIPELINE:
-                if (!visibleTagIDs.contains(32) && !visibleTagIDs.contains(36)) pipelineSwitch(RED_ALL_PIPELINE);
-                break;
-            case BLUE_LEFT_CENTER_PIPELINE:
-                if (!visibleTagIDs.contains(39) && !visibleTagIDs.contains(43)) pipelineSwitch(BLUE_ALL_PIPELINE);
-                break;
-            case BLUE_RIGHT_CENTER_PIPELINE:
-                if (!visibleTagIDs.contains(40) && !visibleTagIDs.contains(44)) pipelineSwitch(BLUE_ALL_PIPELINE);
-                break;
         }
     }
 
@@ -233,19 +171,30 @@ public class Limelight {
         return internalLatestStatus.getPipelineIndex();
     }
 
-    public double getXError() {
+    public boolean isOnTarget() {
         if (resultHasGoodTargets()) {
-            return internalLatestResult.getTx();
+            return (Math.abs(internalLatestResult.getTx()) < X_ERROR_THRESHOLD &&
+                    Math.abs(internalLatestResult.getTy()) < Y_ERROR_THRESHOLD
+//                    internalLatestResult.getTa() > 0.01 // TODO: TUNE THIS FOR DISTANCE CHECKING FOR AIMING!!!!
+            );
+        } else {
+            return false;
+        }
+    }
+
+    public double getTa() {
+        if (resultHasGoodTargets()) {
+            return internalLatestResult.getTa();
         } else {
             return 0;
         }
     }
 
-    public boolean isOnTarget() {
+    public double getXError() {
         if (resultHasGoodTargets()) {
-            return (Math.abs(internalLatestResult.getTx()) < X_ERROR_THRESHOLD && Math.abs(internalLatestResult.getTy()) < Y_ERROR_THRESHOLD);
+            return internalLatestResult.getTx();
         } else {
-            return false;
+            return 0;
         }
     }
 
@@ -257,10 +206,13 @@ public class Limelight {
         }
     }
 
-    public void pipelineSwitch(int pipeline) {
-        lastRequestedPipeline = pipeline;
+    public void pipelineSwitch(int pipelineID) {
+        lastRequestedPipeline = pipelineID;
         timeSinceLastPipelineSwitch.reset();
-        limelight.pipelineSwitch(pipeline);
+
+        if (getCurrentPipelineID() == pipelineID) return;
+
+        limelight.pipelineSwitch(pipelineID);
     }
 
     public ElapsedTime getTimeSinceLastPipelineSwitch() {
