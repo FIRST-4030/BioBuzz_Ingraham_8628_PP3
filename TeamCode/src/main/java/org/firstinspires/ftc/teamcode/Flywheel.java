@@ -32,11 +32,12 @@ public class Flywheel {
     }
 
     public void updatePower() {
-        double currentVelocity = this.getVelocity();
-        double velocityError = targetVelocity - currentVelocity;
-        // CONTROLLER:  feedfoward = Kvelo + feedback = Kpos
-        double setPower = targetVelocity * KVelocity + velocityError * Kp;
-        motor.setPower(setPower);
+//        double currentVelocity = this.getVelocity();
+//        double velocityError = targetVelocity - currentVelocity;
+//        // CONTROLLER:  feedfoward = Kvelo + feedback = Kpos
+//        double setPower = targetVelocity * KVelocity + velocityError * Kp;
+//        motor.setPower(setPower);
+        motor.setPower(targetVelocity);
     }
 
     public void setControllerValues(double Kp, double KVelocity) {

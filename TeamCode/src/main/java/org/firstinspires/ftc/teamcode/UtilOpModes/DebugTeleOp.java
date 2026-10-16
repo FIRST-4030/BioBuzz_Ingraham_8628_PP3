@@ -45,14 +45,15 @@ public class DebugTeleOp extends OpMode {
         limelight.updateData(); // This line is vital, and should be called first in the loop
         handleModeSwitchingControls();
 
-        switch (arm.getMode()) {
+        switch (arm.getArmMode()) {
+            case IDLE:
             case COLLECTING:
                 limelight.lookForBestCollectingPipeline();
                 chassis.drive(gamepad1.left_stick_y, -gamepad1.left_stick_x, gamepad1.right_stick_x);
                 break;
             case AIMING:
                 limelight.lookForBestAimingPipeline();
-                if (arm.isShooting()) {
+                if (arm.hasReachedReadyToShoot()) {
                     chassis.lockedOnDrive(gamepad1.left_stick_y, -gamepad1.left_stick_x, limelight);
                 } else {
                     chassis.drive(gamepad1.left_stick_y, -gamepad1.left_stick_x, gamepad1.right_stick_x);
@@ -68,33 +69,39 @@ public class DebugTeleOp extends OpMode {
     }
 
     public void handleModeSwitchingControls() {
-        if (gamepad1.leftBumperWasPressed()) {
+        if (gamepad1.rightBumperWasPressed()) {
             arm.collectingMode();
-            arm.stopShooting();
-            arm.startCollecting();
-        } else if (gamepad1.rightBumperWasPressed()) {
+            arm.manualReadyToShoot = false;
+        } else if (gamepad1.leftBumperWasPressed()) {
+            arm.idleMode();
+            arm.manualReadyToShoot = false;
+        } else if (gamepad1.rightTriggerWasPressed()) {
             arm.aimingMode();
-            arm.stopCollecting();
-            arm.startShooting();
+            arm.manualReadyToShoot = false;
+        } else if (gamepad1.aWasPressed()) {
+            arm.manualReadyToShoot = true;
+        }
+
+        if (gamepad1.dpadUpWasPressed()) {
+            arm.tempShootPower += 0.05;
+        } else if (gamepad1.dpadDownWasPressed()) {
+            arm.tempShootPower -= 0.05;
         }
     }
 
     public void handleTelemetry() {
-//        boolean readyToShoot = (arm.getMode() == Arm.ArmPositionMode.AIMING &&
-//                limelight.isOnTarget() &&
-//                arm.shooterFlywheel.atSpeed());
-        boolean readyToShoot = (arm.getMode() == Arm.ArmPositionMode.AIMING && limelight.isOnTarget());
-
-        telemetry.addLine("LB: Aiming mode, RB: Collecting mode");
+        telemetry.addLine("LB: Idle, RB: Collecting, RT: Aiming");
+        telemetry.addLine("Dpad: Up: Faster shooter, DOWN: Slower shooter");
+        telemetry.addData("Shooter velocity", arm.tempShootPower);
         if (!(Blackboard.getAlliance() == Blackboard.Alliance.RED || Blackboard.getAlliance() == Blackboard.Alliance.BLUE)) {
             telemetry.addLine("WARNING: ALLIANCE UNSET! You should re-init!");
         } else {
             telemetry.addData("Alliance", Blackboard.getAlliance());
         }
         telemetry.addLine("-------");
-        telemetry.addData("Mode", arm.getMode());
+        telemetry.addData("Mode", arm.getArmMode());
         telemetry.addData("Current arm angle (degrees)", arm.getArmAngleDegrees());
-        telemetry.addData("Ready to shoot?", readyToShoot);
+        telemetry.addData("Ready to shoot?", arm.readyToShoot());
 
         telemetry.addLine();
 

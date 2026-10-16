@@ -31,8 +31,8 @@ public class Limelight {
     }
 
     // Pipeline ID constants
-    public static final int RED_ALL_PIPELINE = 0;
-    public static final int BLUE_ALL_PIPELINE = 1;
+    public static final int RED_HIVE_PIPELINE = 0;
+    public static final int BLUE_HIVE_PIPELINE = 1;
     public static final int POLLEN_PIPELINE = 6;
 
     // Thresholds for aiming
@@ -84,10 +84,10 @@ public class Limelight {
 
     public String getCurrentPipelineName() {
         switch (getCurrentPipelineID()) {
-            case RED_ALL_PIPELINE:
-                return "RED: all tags";
-            case BLUE_ALL_PIPELINE:
-                return "BLUE: all tags";
+            case RED_HIVE_PIPELINE:
+                return "RED HIVE";
+            case BLUE_HIVE_PIPELINE:
+                return "BLUE HIVE";
             case POLLEN_PIPELINE:
                 return "POLLEN";
             default:
@@ -97,9 +97,9 @@ public class Limelight {
 
     public Blackboard.Alliance getAllianceOfPipeline(int pipelineId) {
         switch (pipelineId) {
-            case RED_ALL_PIPELINE:
+            case RED_HIVE_PIPELINE:
                 return Blackboard.Alliance.RED;
-            case BLUE_ALL_PIPELINE:
+            case BLUE_HIVE_PIPELINE:
                 return Blackboard.Alliance.BLUE;
             default:
                 return Blackboard.Alliance.UNKNOWN;
@@ -115,21 +115,17 @@ public class Limelight {
     }
 
     public void lookForBestCollectingPipeline() {
-        if (!limelightPipelineIsCurrent()) return;
-
-        pipelineSwitch(POLLEN_PIPELINE);
+        setPipeline(POLLEN_PIPELINE);
     }
 
     public void lookForBestAimingPipeline() {
-        if (!limelightPipelineIsCurrent()) return;
-
-        int currentPipeline = getCurrentPipelineID();
-
-        Blackboard.Alliance alliance = Blackboard.getAlliance();
-        if (alliance == Blackboard.Alliance.BLUE && getAllianceOfPipeline(currentPipeline) != Blackboard.Alliance.BLUE) {
-            pipelineSwitch(BLUE_ALL_PIPELINE);
-        } else if (alliance == Blackboard.Alliance.RED && getAllianceOfPipeline(currentPipeline) != Blackboard.Alliance.RED) {
-            pipelineSwitch(RED_ALL_PIPELINE);
+        switch (Blackboard.getAlliance()) {
+            case RED:
+                setPipeline(RED_HIVE_PIPELINE);
+                break;
+            case BLUE:
+                setPipeline(BLUE_HIVE_PIPELINE);
+                break;
         }
     }
 
@@ -206,7 +202,9 @@ public class Limelight {
         }
     }
 
-    public void pipelineSwitch(int pipelineID) {
+    public void setPipeline(int pipelineID) {
+        if (!limelightPipelineIsCurrent()) return;
+
         lastRequestedPipeline = pipelineID;
         timeSinceLastPipelineSwitch.reset();
 

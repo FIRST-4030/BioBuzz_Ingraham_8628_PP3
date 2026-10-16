@@ -24,7 +24,7 @@ public class ServoTester extends OpMode {
 //
 //    }
 
-    String DEVICE_NAME = "liftServo";
+    String DEVICE_NAME = "gate_servo";
 
     Servo   servo;
     double  position = 0.5;
@@ -45,7 +45,9 @@ public class ServoTester extends OpMode {
             position -= increment;
         }
 
-        telemetry.addLine(String.format("Servo starts at %.2f", position));
+        servo.setPosition(0.5);
+
+        telemetry.addLine(String.format("Servo will start at %.2f", position));
         telemetry.addLine("DPad Up: Increases servo start position");
         telemetry.addLine("DPad Down: Decreases servo start position");
         telemetry.update();
