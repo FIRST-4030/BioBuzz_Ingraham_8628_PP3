@@ -78,6 +78,7 @@ public class DebugTeleOp extends OpMode {
         } else if (gamepad1.rightTriggerWasPressed()) {
             arm.aimingMode();
             arm.manualReadyToShoot = false;
+            arm.resetShot();
         } else if (gamepad1.aWasPressed()) {
             arm.manualReadyToShoot = true;
         }
@@ -90,7 +91,7 @@ public class DebugTeleOp extends OpMode {
     }
 
     public void handleTelemetry() {
-        telemetry.addLine("LB: Idle, RB: Collecting, RT: Aiming");
+        telemetry.addLine("LB: Idle, RB: Collect, RT: Aim, B: Shoot");
         telemetry.addLine("Dpad: Up: Faster shooter, DOWN: Slower shooter");
         telemetry.addData("Shooter velocity", arm.tempShootPower);
         if (!(Blackboard.getAlliance() == Blackboard.Alliance.RED || Blackboard.getAlliance() == Blackboard.Alliance.BLUE)) {

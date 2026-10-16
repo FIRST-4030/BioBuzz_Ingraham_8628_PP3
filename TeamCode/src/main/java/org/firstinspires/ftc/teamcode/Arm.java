@@ -24,10 +24,10 @@ public class Arm {
     public double tempShootPower = 1;
 
     // 90 degrees is defined as parallel to the ground.
-    private static final double COLLECTING_ARM_ANGLE_DEG = 30.0;
+    private static final double COLLECTING_ARM_ANGLE_DEG = 58.0;
     private static final double AIMING_ARM_ANGLE_DEG = 120.0;
 
-    private static final double MIN_ANGLE_DEG = 56.0;
+    private static final double MIN_ANGLE_DEG = 58.0;
     private static final double MAX_ANGLE_DEG = 140.0;
 
     private static final double FLIPPER_COLLECT_VELOCITY = 1; // TODO: What should this velocity be?
@@ -81,7 +81,7 @@ public class Arm {
 
         handleFlipperFlywheel();
         handleShootingFlywheel();
-        handleShooterServo();
+        handleGateServo();
 
         flipperFlywheel.updatePower();
         shooterFlywheel.updatePower();
@@ -212,7 +212,7 @@ public class Arm {
         }
     }
 
-    private void handleShooterServo() {
+    private void handleGateServo() {
         if (armMode != ArmMode.AIMING) {
             closeGate();
             return;
@@ -228,6 +228,10 @@ public class Arm {
                 reachedAimingHeight &&
                 limelight.isOnTarget() &&
                 shooterFlywheel.atSpeed()) || manualReadyToShoot;
+    }
+
+    public void resetShot() {
+        reachedReadyToShoot = false;
     }
 
     public boolean hasReachedReadyToShoot() {
