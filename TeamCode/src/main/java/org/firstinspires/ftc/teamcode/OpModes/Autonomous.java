@@ -32,7 +32,7 @@ public class Autonomous extends OpMode {
     StateMachine mainStateMachine;
     State mainState;
 
-    Behavior shootGameObjects, activateIdleMode, driveForwardASmidge;
+    Behavior shootGameObjects, activateIdleMode, park;
 
     @Override
     public void init() {
@@ -58,8 +58,8 @@ public class Autonomous extends OpMode {
             arm.idleMode();
         }, "Activate idle mode");
 
-        driveForwardASmidge = GroupBuilder.create()
-                .sequential("Drive forward a smidge")
+        park = GroupBuilder.create()
+                .sequential("Park")
                     .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
                         .add(new WaitMS(250))
                         .add(new UpdatingBehavior(() -> {
@@ -85,7 +85,7 @@ public class Autonomous extends OpMode {
                         .sequential("Autonomous sequence")
                             .add(shootGameObjects)
                             .add(activateIdleMode)
-                            .add(driveForwardASmidge)
+                            .add(park)
                         .end()
                         .build(),
                 () -> null
