@@ -36,8 +36,8 @@ public class Limelight {
     public static final int POLLEN_PIPELINE = 6;
 
     // Thresholds for aiming
-    private static final double X_ERROR_THRESHOLD = 5;
-    private static final double Y_ERROR_THRESHOLD = 5;
+    private static final double X_ERROR_THRESHOLD = 10;
+    private static final double Y_ERROR_THRESHOLD = 15;
 
     // Used so that we only switch pipelines once the last requested pipeline has been successfully
     // switched to

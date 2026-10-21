@@ -19,15 +19,14 @@ public class Arm {
     private boolean reachedAimingHeight = false;
     private boolean reachedReadyToShoot = false;
 
-    public boolean manualReadyToShoot = false; // Last resort
     // TODO: THIS IS TEMPORARY
-    public double tempShootPower = 1;
+    public double tempShootPower = 0.75;
 
     // 90 degrees is defined as parallel to the ground.
-    private static final double COLLECTING_ARM_ANGLE_DEG = 58.0;
+    private static final double COLLECTING_ARM_ANGLE_DEG = 50.0;
     private static final double AIMING_ARM_ANGLE_DEG = 120.0;
 
-    private static final double MIN_ANGLE_DEG = 58.0;
+    private static final double MIN_ANGLE_DEG = 50.0;
     private static final double MAX_ANGLE_DEG = 140.0;
 
     private static final double FLIPPER_COLLECT_VELOCITY = 1; // TODO: What should this velocity be?
@@ -119,7 +118,7 @@ public class Arm {
         double power = calculateHingePowerForAngle(currentArmAngleDegrees, goalArmAngleDegrees);
         armHinge.setPower(power);
 
-        if (currentArmAngleDegrees > AIMING_ARM_ANGLE_DEG - 5) {
+        if (currentArmAngleDegrees > AIMING_ARM_ANGLE_DEG - 10) {
             reachedAimingHeight = true;
         }
 
@@ -135,8 +134,8 @@ public class Arm {
 
         // TODO: Want to try doing it this way too:
         double error = clippedGoalArmAngleDegrees - currentArmAngleDegrees;
-        double kP = 0.08;
-        double kG = 0.3; // Tuning parameter for gravity compensation
+        double kP = 0.07;
+        double kG = 0.8; // Tuning parameter for gravity compensation
 
         // Angle is relative to ground (90° = horizontal)
         double feedForward = kG * Math.cos(Math.toRadians(currentArmAngleDegrees));
@@ -168,6 +167,7 @@ public class Arm {
 
     public void collectingMode() {
         this.armMode = ArmMode.COLLECTING;
+        resetShot();
     }
 
     public void aimingMode() {
@@ -176,6 +176,7 @@ public class Arm {
 
     public void idleMode() {
         this.armMode = ArmMode.IDLE;
+        resetShot();
     }
 
     // ONLY USE FOR DEBUGGING/CALIBRATION OPMODES!!
@@ -227,15 +228,20 @@ public class Arm {
         return (armMode == ArmMode.AIMING &&
                 reachedAimingHeight &&
                 limelight.isOnTarget() &&
-                shooterFlywheel.atSpeed()) || manualReadyToShoot;
+                shooterFlywheel.atSpeed());
     }
 
     public void resetShot() {
         reachedReadyToShoot = false;
+        closeGate();
     }
 
     public boolean hasReachedReadyToShoot() {
         return reachedReadyToShoot;
+    }
+
+    public boolean hasReachedAimingHeight() {
+        return reachedAimingHeight;
     }
 
     private void closeGate() { gateServo.setPosition(

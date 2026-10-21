@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.UtilOpModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -10,6 +11,7 @@ import org.firstinspires.ftc.teamcode.Chassis;
 import org.firstinspires.ftc.teamcode.ControlHub;
 import org.firstinspires.ftc.teamcode.Limelight;
 
+@Disabled
 @TeleOp(name = "Debug TeleOp", group="Util")
 public class DebugTeleOp extends OpMode {
 

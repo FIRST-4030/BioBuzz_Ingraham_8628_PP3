@@ -37,6 +37,7 @@ public class Flywheel {
 //        // CONTROLLER:  feedfoward = Kvelo + feedback = Kpos
 //        double setPower = targetVelocity * KVelocity + velocityError * Kp;
 //        motor.setPower(setPower);
+        // TODO: Use the above code instead once we get the encoders set up?
         motor.setPower(targetVelocity);
     }
 
@@ -71,7 +72,8 @@ public class Flywheel {
     }
 
     public boolean atSpeed() {
-        return (1 - errorMargin) * targetVelocity < this.getVelocity() &&
-                this.getVelocity() < (1 + errorMargin) * targetVelocity;
+        return true;
+//        return (1 - errorMargin) * targetVelocity < this.getVelocity() &&
+//                this.getVelocity() < (1 + errorMargin) * targetVelocity;
     }
 }
