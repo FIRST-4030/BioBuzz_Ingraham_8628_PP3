@@ -21,12 +21,15 @@ public class TeleOp extends OpMode {
 
     @Override
     public void init() {
-        controlHub = new ControlHub();
+        controlHub = new ControlHub(hardwareMap);
 
         imu = hardwareMap.get(IMU.class, "imu");
         limelight = new Limelight(hardwareMap);
         chassis = new Chassis(hardwareMap);
         arm = new Arm(hardwareMap, limelight);
+        arm.closeGate();
+
+        imu.resetYaw();
     }
 
     public void init_loop() {
@@ -48,11 +51,15 @@ public class TeleOp extends OpMode {
             case IDLE:
             case COLLECTING:
                 limelight.lookForBestCollectingPipeline();
-                chassis.drive(gamepad1.left_stick_y, -gamepad1.left_stick_x, gamepad1.right_stick_x);
+                chassis.drive(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
                 break;
             case AIMING:
                 limelight.lookForBestAimingPipeline();
-                chassis.lockedOnDrive(gamepad1.left_stick_y, -gamepad1.left_stick_x, limelight);
+                if (limelight.resultHasGoodTargets()) {
+                    chassis.lockedOnDrive(-gamepad1.left_stick_y, gamepad1.left_stick_x, limelight);
+                } else {
+                    chassis.drive(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
+                }
                 break;
             default:
                 chassis.stopMotors();
@@ -77,10 +84,12 @@ public class TeleOp extends OpMode {
         } else if (gamepad1.dpadDownWasPressed()) {
             arm.tempShootPower -= 0.05;
         }
+
+        arm.ejectOverride = gamepad1.left_trigger > 0.5;
     }
 
     public void handleTelemetry() {
-        telemetry.addLine("LB: Idle, RB: Collect, RT: Aim + Shoot");
+        telemetry.addLine("LB: Idle, RB: Collect, RT: Aim + Shoot, LB: Eject");
         telemetry.addLine("Dpad: Up: Faster shooter, DOWN: Slower shooter");
         telemetry.addData("Shooter velocity", arm.tempShootPower);
         if (!(Blackboard.getAlliance() == Blackboard.Alliance.RED || Blackboard.getAlliance() == Blackboard.Alliance.BLUE)) {
@@ -105,7 +114,6 @@ public class TeleOp extends OpMode {
             telemetry.addData("On target", limelight.isOnTarget());
             telemetry.addData("Tx", limelight.getXError());
             telemetry.addData("Ty", limelight.getYError());
-            telemetry.addData("Ta", limelight.getTa());
         } else {
             telemetry.addLine("No good targets visible");
         }

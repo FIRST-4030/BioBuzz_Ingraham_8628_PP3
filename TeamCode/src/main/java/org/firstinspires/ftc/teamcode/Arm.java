@@ -21,6 +21,7 @@ public class Arm {
 
     // TODO: THIS IS TEMPORARY
     public double tempShootPower = 0.75;
+    public boolean ejectOverride = false;
 
     // 90 degrees is defined as parallel to the ground.
     private static final double COLLECTING_ARM_ANGLE_DEG = 50.0;
@@ -132,10 +133,9 @@ public class Arm {
     private double calculateHingePowerForAngle(double currentArmAngleDegrees, double goalArmAngleDegrees) {
         double clippedGoalArmAngleDegrees = Range.clip(goalArmAngleDegrees, MIN_ANGLE_DEG, MAX_ANGLE_DEG);
 
-        // TODO: Want to try doing it this way too:
         double error = clippedGoalArmAngleDegrees - currentArmAngleDegrees;
         double kP = 0.07;
-        double kG = 0.8; // Tuning parameter for gravity compensation
+        double kG = 0.3; // Tuning parameter for gravity compensation
 
         // Angle is relative to ground (90° = horizontal)
         double feedForward = kG * Math.cos(Math.toRadians(currentArmAngleDegrees));
@@ -144,7 +144,6 @@ public class Arm {
     }
 
     public double getArmAngleDegrees() {
-        // TODO: Double check this equation is the correct one
         return 109.11623 * getPotentiometerVoltage() + 40.01092;
     }
 
@@ -188,6 +187,11 @@ public class Arm {
     // --- SHOOTER AND FLIPPER ---
 
     private void handleFlipperFlywheel() {
+        if (ejectOverride) {
+            flipperFlywheel.setTargetVelocity(-FLIPPER_COLLECT_VELOCITY);
+            return;
+        }
+
         switch (armMode) {
             case IDLE:
                 flipperFlywheel.stop();
@@ -244,11 +248,11 @@ public class Arm {
         return reachedAimingHeight;
     }
 
-    private void closeGate() { gateServo.setPosition(
+    public void closeGate() { gateServo.setPosition(
             SERVO_CLOSED_POSITION
     ); }
 
-    private void openGate() { gateServo.setPosition(
+    public void openGate() { gateServo.setPosition(
             SERVO_OPEN_POSITION
     ); }
 }

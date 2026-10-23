@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.util.Range;
@@ -27,8 +28,6 @@ public class Chassis {
         backLeftDrive.setDirection(DcMotor.Direction.REVERSE);
         backRightDrive.setDirection(DcMotor.Direction.FORWARD);
 
-        // This uses RUN_USING_ENCODER to be more accurate.   If you don't have the encoder
-        // wires, you should remove these
         frontLeftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontRightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backLeftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -78,8 +77,8 @@ public class Chassis {
     }
 
     public void lockedOnDrive(double forward, double right, Limelight limelight) {
-        // TODO: Better PID equation for this instead of just a lerp
-        this.drive(forward, right, limelight.getXError() / 35);
+        // TODO: Better PID equation for this instead of just a lerp?
+        this.drive(forward, right, -limelight.getXError() / 20);
     }
 
     public void chasingDrive(double forward, double right, Gamepad gamepad, Limelight limelight) {

@@ -2,7 +2,11 @@ package org.firstinspires.ftc.teamcode;
 
 import android.os.Environment;
 
+import com.pedropathing.follower.Follower;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+import org.firstinspires.ftc.teamcode.pedro.ConstantsBioBuzzCompetitionBot;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -12,14 +16,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class ControlHub {
+    private final HardwareMap hardwareMap;
+
     public enum BotIdentification {
-        DECODE,
         BIOBUZZ_COMPETITION,
         BIOBUZZ_DEMO,
-        UNKNOWN,
-        SANDBOX1,
-        SANDBOX2,
-        SANDBOX3
+        UNKNOWN
     }
 
     // This is the bot identification that will be used if the robot doesn't have a properly
@@ -28,13 +30,14 @@ public class ControlHub {
 
     private final String fileName;
 
-    public ControlHub() {
+    public ControlHub(HardwareMap hw) {
         String logFolder = Environment.getExternalStorageDirectory().getPath(); // /storage/emulated/0 also maps to /sdcard
 
         // filename used to be "/FIRST/Datalogs/ControlHub.txt" on older robots.
         // It's necessary to create a new ControlHub.txt with the bot identification
         // on older robots that used to store it here in order for them to work properly.
         fileName = logFolder + "/FIRST/ControlHub.txt";
+        hardwareMap = hw;
     }
 
     public boolean createControlHubFile() throws IOException {
@@ -61,7 +64,7 @@ public class ControlHub {
     }
 
     public BotIdentification getBotIdentification() {
-        String line = null;
+        String line;
         try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
             line = reader.readLine();
         } catch (IOException e) {
@@ -100,18 +103,10 @@ public class ControlHub {
 
     public String botIdentificationToString(BotIdentification botIdentification) {
         switch (botIdentification) {
-            case DECODE:
-                return "DECODE";
             case BIOBUZZ_COMPETITION:
                 return "BIOBUZZ_COMPETITION";
             case BIOBUZZ_DEMO:
                 return "BIOBUZZ_DEMO";
-            case SANDBOX1:
-                return "SANDBOX1";
-            case SANDBOX2:
-                return "SANDBOX2";
-            case SANDBOX3:
-                return "SANDBOX3";
             default:
                 return "UNKNOWN";
         }
@@ -123,35 +118,25 @@ public class ControlHub {
         }
 
         switch (string) {
-            case "DECODE":
-                return BotIdentification.DECODE;
             case "BIOBUZZ_COMPETITION":
                 return BotIdentification.BIOBUZZ_COMPETITION;
             case "BIOBUZZ_DEMO":
                 return BotIdentification.BIOBUZZ_DEMO;
-            case "SANDBOX1":
-                return BotIdentification.SANDBOX1;
-            case "SANDBOX2":
-                return BotIdentification.SANDBOX2;
-            case "SANDBOX3":
-                return BotIdentification.SANDBOX3;
             default:
                 return BotIdentification.UNKNOWN;
         }
     }
 
-//    public PedroConstants getRobotSpecificPedroConstants() {
-//        switch (getBotIdentification()) {
-//            case DECODE:
-//                return new PedroConstantsDecodeBot();
-//            case BIOBUZZ_COMPETITION:
-//                return new PedroConstantsBioBuzzCompetitionBot();
-//            case BIOBUZZ_DEMO:
-//                return new PedroConstantsBioBuzzDemoBot();
-//            default:
-//                return new PedroConstantsBioBuzzCompetitionBot(); // Return competition constants
-//        }
-//    }
+    public Follower getRobotSpecificPedroConstants() {
+        switch (getBotIdentification()) {
+            case BIOBUZZ_COMPETITION:
+                return ConstantsBioBuzzCompetitionBot.create(hardwareMap);
+            case BIOBUZZ_DEMO:
+                return ConstantsBioBuzzCompetitionBot.create(hardwareMap);
+            default:
+                return ConstantsBioBuzzCompetitionBot.create(hardwareMap); // Return competition constants
+        }
+    }
 
     public void processBotIdentificationTelemetry(Telemetry telemetry) {
         telemetry.addLine("--- BOT IDENTIFICATION ---");
@@ -165,14 +150,4 @@ public class ControlHub {
         }
         telemetry.addLine();
     }
-
-//    public Follower createFollower(HardwareMap hardwareMap) {
-//        PedroConstants pedroConstants = getRobotSpecificPedroConstants();
-//
-//        return new FollowerBuilder(getRobotSpecificPedroConstants().getFollowerConstants(), hardwareMap)
-//                .pathConstraints(pedroConstants.getPathConstraints())
-//                .mecanumDrivetrain(pedroConstants.getDriveConstraints())
-//                .pinpointLocalizer(pedroConstants.getLocalizerConstants())
-//                .build();
-//    }
 }

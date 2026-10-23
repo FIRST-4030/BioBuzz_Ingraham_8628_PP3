@@ -30,18 +30,26 @@ public class Autonomous extends OpMode {
     Arm arm;
 
     StateMachine mainStateMachine;
-    State mainState;
+    State shootAndParkState, forwardASmidgeState;
 
-    Behavior shootGameObjects, activateIdleMode, park;
+    Behavior shootGameObjects, activateIdleMode, park, driveForwardASmidge;
+
+    enum StartingPosition {
+        FACING_TIPPED_HIVE,
+        FACING_UPRIGHT_HIVE
+    }
+
+    StartingPosition startingPosition = StartingPosition.FACING_TIPPED_HIVE;
 
     @Override
     public void init() {
-        controlHub = new ControlHub();
+        controlHub = new ControlHub(hardwareMap);
 
         imu = hardwareMap.get(IMU.class, "imu");
         limelight = new Limelight(hardwareMap);
         chassis = new Chassis(hardwareMap);
         arm = new Arm(hardwareMap, limelight);
+        arm.closeGate();
 
         shootGameObjects = GroupBuilder.create()
                 .sequential("Prepare for shot")
@@ -61,13 +69,19 @@ public class Autonomous extends OpMode {
         park = GroupBuilder.create()
                 .sequential("Park")
                     .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
-                        .add(new WaitMS(250))
+                        .add(new WaitMS(1500))
                         .add(new UpdatingBehavior(() -> {
-                            chassis.drive(-1, 0, 0);
+                            chassis.drive(1, -1, 0);
                         }))
                     .end()
                     .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
-                        .add(new WaitMS(1250))
+                        .add(new WaitMS(1150))
+                        .add(new UpdatingBehavior(() -> {
+                            chassis.drive(1, 0, 0);
+                        }))
+                    .end()
+                    .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
+                        .add(new WaitMS(500))
                         .add(new UpdatingBehavior(() -> {
                             chassis.drive(0, -1, 0);
                         }))
@@ -76,11 +90,22 @@ public class Autonomous extends OpMode {
                 .end()
                 .build();
 
+        driveForwardASmidge = GroupBuilder.create()
+                .sequential()
+                    .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
+                        .add(new WaitMS(400))
+                        .add(new UpdatingBehavior(() -> {
+                            chassis.drive(1, 0, 0);
+                        }))
+                    .end()
+                    .add(new InstantBehavior(() -> { chassis.stopMotors(); }))
+                .end()
+                .build();
 
 
         mainStateMachine = new StateMachine("Main");
 
-        mainState = new TaskState(
+        shootAndParkState = new TaskState(
                 GroupBuilder.create()
                         .sequential("Autonomous sequence")
                             .add(shootGameObjects)
@@ -90,19 +115,42 @@ public class Autonomous extends OpMode {
                         .build(),
                 () -> null
         );
+
+        forwardASmidgeState = new TaskState(
+                driveForwardASmidge,
+                () -> null
+        );
     }
 
     public void init_loop() {
         limelight.updateData(); // This line is vital, and should be called first in the loop
+
         controlHub.processBotIdentificationTelemetry(telemetry);
+        telemetry.addLine("RB + Y: HIVE UPRIGHT");
+        telemetry.addLine("RB + A: HIVE DOWN");
+        telemetry.addData("Start position:", startingPosition);
+        telemetry.addLine();
         Blackboard.initLoopProcess(telemetry, gamepad1);
+
+        if (gamepad1.right_bumper && gamepad1.yWasPressed()) {
+            startingPosition = StartingPosition.FACING_UPRIGHT_HIVE;
+        } else if (gamepad1.right_bumper && gamepad1.aWasPressed()) {
+            startingPosition = StartingPosition.FACING_TIPPED_HIVE;
+        }
+
+        telemetry.update();
     }
 
     public void start() {
         arm.collectingMode();
         limelight.lookForBestAimingPipeline();
 
-        mainStateMachine.setInitialState(mainState);
+        if (startingPosition == StartingPosition.FACING_TIPPED_HIVE) {
+            mainStateMachine.setInitialState(forwardASmidgeState);
+            arm.idleMode();
+        } else {
+            mainStateMachine.setInitialState(shootAndParkState);
+        }
         mainStateMachine.enter();
     }
 

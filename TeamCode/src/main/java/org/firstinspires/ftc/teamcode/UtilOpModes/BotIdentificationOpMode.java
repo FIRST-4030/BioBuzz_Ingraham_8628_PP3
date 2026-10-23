@@ -23,7 +23,7 @@ public class BotIdentificationOpMode extends OpMode {
     String operation= "";
 
     public void init() {
-        controlHub = new ControlHub();
+        controlHub = new ControlHub(hardwareMap);
         telemetry.addData("Compiled on:", BuildConfig.COMPILATION_DATE);
         telemetry.update();
     }
