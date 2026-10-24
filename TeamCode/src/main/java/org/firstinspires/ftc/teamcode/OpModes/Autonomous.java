@@ -19,8 +19,8 @@ import org.firstinspires.ftc.teamcode.TempBehaviorSystem.UserBehaviors.UpdatingB
 import org.firstinspires.ftc.teamcode.TempBehaviorSystem.UserBehaviors.WaitMS;
 import org.firstinspires.ftc.teamcode.TempBehaviorSystem.UserBehaviors.WaitUntil;
 
-@com.qualcomm.robotcore.eventloop.opmode.Autonomous(name = "Legacy Autonomous", group="Util")
-public class LegacyAutonomous extends OpMode {
+@com.qualcomm.robotcore.eventloop.opmode.Autonomous(name = "Autonomous", group="Util")
+public class Autonomous extends OpMode {
 
     ControlHub controlHub;
 
