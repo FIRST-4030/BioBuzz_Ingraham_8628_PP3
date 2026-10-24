@@ -143,7 +143,7 @@ public class Autonomous extends OpMode {
 
     public void start() {
         arm.collectingMode();
-        limelight.lookForBestAimingPipeline();
+        limelight.lookForHives();
 
         if (startingPosition == StartingPosition.FACING_TIPPED_HIVE) {
             mainStateMachine.setInitialState(forwardASmidgeState);

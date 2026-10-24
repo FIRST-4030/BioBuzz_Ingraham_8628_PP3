@@ -38,7 +38,7 @@ public class PotentiometerTestOp extends OpMode {
 
     public void start() {
         arm.collectingMode();
-        limelight.lookForBestAimingPipeline();
+        limelight.lookForHives();
     }
 
     public void loop() {

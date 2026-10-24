@@ -11,7 +11,6 @@ import org.firstinspires.ftc.teamcode.Limelight;
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "TeleOp", group="Util")
 public class TeleOp extends OpMode {
-
     ControlHub controlHub;
 
     IMU imu;
@@ -27,7 +26,6 @@ public class TeleOp extends OpMode {
         limelight = new Limelight(hardwareMap);
         chassis = new Chassis(hardwareMap);
         arm = new Arm(hardwareMap, limelight);
-        arm.closeGate();
 
         imu.resetYaw();
     }
@@ -39,8 +37,7 @@ public class TeleOp extends OpMode {
     }
 
     public void start() {
-        arm.collectingMode();
-        limelight.lookForBestAimingPipeline();
+        limelight.lookForHives();
     }
 
     public void loop() {
@@ -50,11 +47,11 @@ public class TeleOp extends OpMode {
         switch (arm.getArmMode()) {
             case IDLE:
             case COLLECTING:
-                limelight.lookForBestCollectingPipeline();
+                limelight.lookForPollen();
                 chassis.drive(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
                 break;
             case AIMING:
-                limelight.lookForBestAimingPipeline();
+                limelight.lookForHives();
                 if (limelight.resultHasGoodTargets()) {
                     chassis.lockedOnDrive(-gamepad1.left_stick_y, gamepad1.left_stick_x, limelight);
                 } else {

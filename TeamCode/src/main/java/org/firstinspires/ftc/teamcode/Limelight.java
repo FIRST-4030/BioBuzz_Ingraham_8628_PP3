@@ -13,8 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Limelight {
-
     public Limelight3A limelight;
+
     // Use internal results and status so we can update the data once each loop and use those
     // same results throughout the loop.
     // Be careful: changing values on the limelight won't result in a readable change until
@@ -34,6 +34,7 @@ public class Limelight {
     public static final int RED_HIVE_PIPELINE = 0;
     public static final int BLUE_HIVE_PIPELINE = 1;
     public static final int POLLEN_PIPELINE = 6;
+    public static final int BLANK_PIPELINE = 7; // TODO: Check that this is actually a blank pipeline...
 
     // Thresholds for aiming
     private static final double X_ERROR_THRESHOLD = 10;
@@ -90,6 +91,8 @@ public class Limelight {
                 return "BLUE HIVE";
             case POLLEN_PIPELINE:
                 return "POLLEN";
+            case BLANK_PIPELINE:
+                return "BLANK";
             default:
                 return "Unnamed pipeline";
         }
@@ -114,11 +117,11 @@ public class Limelight {
         return lastRequestedPipeline == getCurrentPipelineID();
     }
 
-    public void lookForBestCollectingPipeline() {
+    public void lookForPollen() {
         setPipeline(POLLEN_PIPELINE);
     }
 
-    public void lookForBestAimingPipeline() {
+    public void lookForHives() {
         switch (Blackboard.getAlliance()) {
             case RED:
                 setPipeline(RED_HIVE_PIPELINE);
