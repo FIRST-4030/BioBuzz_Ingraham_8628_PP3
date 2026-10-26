@@ -78,7 +78,7 @@ public class Chassis {
 
     public void lockedOnDrive(double forward, double right, Limelight limelight) {
         // TODO: Better PID equation for this instead of just a lerp?
-        this.drive(forward, right, -limelight.getXError() / 20);
+        this.drive(forward, right, limelight.getXError() / 20);
     }
 
     public void chasingDrive(double forward, double right, Gamepad gamepad, Limelight limelight) {

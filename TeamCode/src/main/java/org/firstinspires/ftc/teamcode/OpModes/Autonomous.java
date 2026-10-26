@@ -58,7 +58,7 @@ public class Autonomous extends OpMode {
                         arm.resetShot();
                     }))
                     .add(new WaitUntil(() -> arm.readyToShoot()))
-                    .add(new WaitMS(500))
+                    .add(new WaitMS(1200))
                 .end()
                 .build();
 
@@ -75,13 +75,15 @@ public class Autonomous extends OpMode {
                         }))
                     .end()
                     .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
-                        .add(new WaitMS(1150))
+                        .add(new WaitMS(1100))
                         .add(new UpdatingBehavior(() -> {
                             chassis.drive(1, 0, 0);
                         }))
                     .end()
+                    .add(new InstantBehavior(() -> chassis.stopMotors()))
+                    .add(new WaitMS(200))
                     .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
-                        .add(new WaitMS(500))
+                        .add(new WaitMS(150))
                         .add(new UpdatingBehavior(() -> {
                             chassis.drive(0, -1, 0);
                         }))
@@ -98,7 +100,15 @@ public class Autonomous extends OpMode {
                             chassis.drive(1, 0, 0);
                         }))
                     .end()
-                    .add(new InstantBehavior(() -> { chassis.stopMotors(); }))
+                    .add(new InstantBehavior(() -> chassis.stopMotors()))
+                    .add(new WaitMS(200))
+                    .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
+                        .add(new WaitMS(1150))
+                        .add(new UpdatingBehavior(() -> {
+                            chassis.drive(0, 1, 0);
+                        }))
+                    .end()
+                    .add(new InstantBehavior(() -> chassis.stopMotors()))
                 .end()
                 .build();
 

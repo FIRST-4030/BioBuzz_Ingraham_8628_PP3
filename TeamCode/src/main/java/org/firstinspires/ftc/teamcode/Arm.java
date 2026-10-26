@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
 public class Arm {
@@ -19,9 +20,10 @@ public class Arm {
 
     private boolean reachedAimingHeight = false;
     private boolean reachedReadyToShoot = false;
+    private final ElapsedTime timeSinceReachedReadyToShoot = new ElapsedTime();
 
     // TODO: THIS IS TEMPORARY
-    public double tempShootPower = 0.75;
+    public double tempShootPower = 0.7;
     public boolean ejectOverride = false;
 
     // 90 degrees is defined as parallel to the ground.
@@ -34,8 +36,8 @@ public class Arm {
     private static final double FLIPPER_COLLECT_VELOCITY = 1; // TODO: What should this velocity be?
     private static final double FLIPPER_SHOOT_VELOCITY = 1; // TODO: What should this velocity be?
 
-    private static final double SERVO_CLOSED_POSITION = 0.4;
-    private static final double SERVO_OPEN_POSITION = 0.0;
+    private static final double SERVO_CLOSED_POSITION = 0.6;
+    private static final double SERVO_OPEN_POSITION = 0.15;
 
     public enum ArmMode {
         IDLE,
@@ -125,6 +127,9 @@ public class Arm {
         }
 
         if (readyToShoot()) {
+            if (!reachedReadyToShoot) {
+                timeSinceReachedReadyToShoot.reset();
+            }
             reachedReadyToShoot = true;
         }
     }
@@ -135,8 +140,8 @@ public class Arm {
         double clippedGoalArmAngleDegrees = Range.clip(goalArmAngleDegrees, MIN_ANGLE_DEG, MAX_ANGLE_DEG);
 
         double error = clippedGoalArmAngleDegrees - currentArmAngleDegrees;
-        double kP = 0.07;
-        double kG = 0.3; // Tuning parameter for gravity compensation
+        double kP = 0.04;
+        double kG = 0.5; // Tuning parameter for gravity compensation
 
         // Angle is relative to ground (90° = horizontal)
         double feedForward = kG * Math.cos(Math.toRadians(currentArmAngleDegrees));
@@ -189,7 +194,11 @@ public class Arm {
 
     private void handleFlipperFlywheel() {
         if (ejectOverride) {
-            flipperFlywheel.setTargetVelocity(-FLIPPER_COLLECT_VELOCITY);
+            if (armMode == ArmMode.AIMING) {
+                flipperFlywheel.setTargetVelocity(FLIPPER_COLLECT_VELOCITY / 4);
+            } else {
+                flipperFlywheel.setTargetVelocity(-FLIPPER_COLLECT_VELOCITY);
+            }
             return;
         }
 
@@ -211,7 +220,12 @@ public class Arm {
     }
 
     private void handleShootingFlywheel() {
-        if (armMode == ArmMode.AIMING) {
+        if (armMode == ArmMode.COLLECTING) {
+            shooterFlywheel.setTargetVelocity(-tempShootPower / 2);
+            return;
+        }
+
+        if (armMode == ArmMode.AIMING && !ejectOverride) {
             shooterFlywheel.setTargetVelocity(tempShootPower);
         } else {
             shooterFlywheel.setTargetVelocity(0);
@@ -219,13 +233,20 @@ public class Arm {
     }
 
     private void handleGateServo() {
+        if (ejectOverride) {
+            openGate();
+            return;
+        }
+
         if (armMode != ArmMode.AIMING) {
             closeGate();
             return;
         }
 
-        if (reachedReadyToShoot) {
+        if (reachedReadyToShoot && timeSinceReachedReadyToShoot.milliseconds() > 500) {
             openGate();
+        } else {
+            closeGate();
         }
     }
 
