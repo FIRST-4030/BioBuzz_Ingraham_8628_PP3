@@ -1,18 +1,13 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.pedropathing.ivy.Command;
-import com.qualcomm.robotcore.hardware.AnalogInput;
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
-import com.qualcomm.robotcore.util.Range;
 
 public class Arm {
 
-    public DcMotor armHinge;
-    public AnalogInput armPotentiometer;
+    public ArmHinge armHinge;
     public Flywheel shooterFlywheel;
     public Flywheel flipperFlywheel;
     public Servo gateServo;
@@ -23,20 +18,18 @@ public class Arm {
     private final ElapsedTime timeSinceReachedReadyToShoot = new ElapsedTime();
 
     // TODO: THIS IS TEMPORARY
-    public double tempShootPower = 0.7;
     public boolean ejectOverride = false;
 
     // 90 degrees is defined as parallel to the ground.
-    private static final double COLLECTING_ARM_ANGLE_DEG = 50.0;
-    private static final double AIMING_ARM_ANGLE_DEG = 120.0;
+    public static final double COLLECTING_ARM_ANGLE_DEG = 50.0;
+    public static final double AIMING_ARM_ANGLE_DEG = 120.0;
 
-    private static final double MIN_ANGLE_DEG = 50.0;
-    private static final double MAX_ANGLE_DEG = 140.0;
+    private static final double SHOOTER_COLLECT_RPM = -1500;
+    private static final double SHOOTER_SHOOTING_RPM = 2000;
+    private static final double FLIPPER_COLLECT_RPM = 500; // TODO: What should this velocity be?
+    private static final double FLIPPER_SHOOTING_RPM = 500; // TODO: What should this velocity be?
 
-    private static final double FLIPPER_COLLECT_VELOCITY = 1; // TODO: What should this velocity be?
-    private static final double FLIPPER_SHOOT_VELOCITY = 1; // TODO: What should this velocity be?
-
-    private static final double SERVO_CLOSED_POSITION = 0.6;
+    private static final double SERVO_CLOSED_POSITION = 0.7;
     private static final double SERVO_OPEN_POSITION = 0.15;
 
     public enum ArmMode {
@@ -45,43 +38,34 @@ public class Arm {
         AIMING
     }
 
-    private ArmMode armMode = ArmMode.COLLECTING;
+    private ArmMode armMode = ArmMode.IDLE;
 
     public Arm(HardwareMap hardwareMap, Limelight limelight) {
-        armHinge = hardwareMap.get(DcMotor.class, "arm");
-        armHinge.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        armPotentiometer = hardwareMap.get(AnalogInput.class, "arm_potentiometer");
+        armHinge = new ArmHinge(hardwareMap);
 
         // Both are using default controller values for now, but can be later changed with
         // MotorVelocityController.setControllerValues()
         flipperFlywheel = new Flywheel(hardwareMap, "flipper", DcMotorSimple.Direction.REVERSE);
+        flipperFlywheel.setControllerValues(0.1, 0.005, 753.2, 0.02, false);
+
         shooterFlywheel = new Flywheel(hardwareMap, "shooter", DcMotorSimple.Direction.REVERSE);
+        shooterFlywheel.setControllerValues(0.007, 0.00046, 56, 0.02, false);
+
         gateServo = hardwareMap.get(Servo.class, "gate_servo");
 
         this.limelight = limelight;
     }
 
     public void update() {
-        if (!isPotentiometerConnected()) {
-            armHinge.setPower(0);
+        if (!armHinge.isPotentiometerConnected()) {
+            armHinge.stop();
             shooterFlywheel.stop();
             flipperFlywheel.stop();
+            closeGate();
             return;
         }
 
-        switch (armMode) {
-            case IDLE:
-                idleModeUpdate();
-                break;
-            case COLLECTING:
-                collectingModeUpdate();
-                break;
-            case AIMING:
-                aimingModeUpdate();
-                break;
-        }
-
+        handleArmHinge();
         handleFlipperFlywheel();
         handleShootingFlywheel();
         handleGateServo();
@@ -90,28 +74,22 @@ public class Arm {
         shooterFlywheel.updatePower();
     }
 
-    private void idleModeUpdate() {
-        double currentArmAngleDegrees = this.getArmAngleDegrees();
-        double power = calculateHingePowerForAngle(currentArmAngleDegrees, COLLECTING_ARM_ANGLE_DEG);
+    // --- ARM ---
 
-        armHinge.setPower(power);
-
-        reachedAimingHeight = false;
-        reachedReadyToShoot = false;
+    private void handleArmHinge() {
+        switch (armMode) {
+            case IDLE:
+            case COLLECTING:
+                armHinge.driveArmToAngle(COLLECTING_ARM_ANGLE_DEG);
+                break;
+            case AIMING:
+                aimingModeArmHingeUpdate();
+                break;
+        }
     }
 
-    private void collectingModeUpdate() {
-        double currentArmAngleDegrees = this.getArmAngleDegrees();
-        double power = calculateHingePowerForAngle(currentArmAngleDegrees, COLLECTING_ARM_ANGLE_DEG);
-
-        armHinge.setPower(power);
-
-        reachedAimingHeight = false;
-        reachedReadyToShoot = false;
-    }
-
-    private void aimingModeUpdate() {
-        double currentArmAngleDegrees = this.getArmAngleDegrees();
+    private void aimingModeArmHingeUpdate() {
+        double currentArmAngleDegrees = armHinge.getArmAngleDegrees();
         double goalArmAngleDegrees = AIMING_ARM_ANGLE_DEG;
 
         if (limelight != null && limelight.resultHasGoodTargets() && reachedAimingHeight) {
@@ -119,8 +97,7 @@ public class Arm {
             goalArmAngleDegrees = currentArmAngleDegrees + angleOffset;
         }
 
-        double power = calculateHingePowerForAngle(currentArmAngleDegrees, goalArmAngleDegrees);
-        armHinge.setPower(power);
+        armHinge.driveArmToAngle(goalArmAngleDegrees);
 
         if (currentArmAngleDegrees > AIMING_ARM_ANGLE_DEG - 10) {
             reachedAimingHeight = true;
@@ -134,60 +111,29 @@ public class Arm {
         }
     }
 
-    // --- ARM ---
-
-    private double calculateHingePowerForAngle(double currentArmAngleDegrees, double goalArmAngleDegrees) {
-        double clippedGoalArmAngleDegrees = Range.clip(goalArmAngleDegrees, MIN_ANGLE_DEG, MAX_ANGLE_DEG);
-
-        double error = clippedGoalArmAngleDegrees - currentArmAngleDegrees;
-        double kP = 0.04;
-        double kG = 0.5; // Tuning parameter for gravity compensation
-
-        // Angle is relative to ground (90° = horizontal)
-        double feedForward = kG * Math.cos(Math.toRadians(currentArmAngleDegrees));
-        double power = (error * kP) + feedForward;
-        return Range.clip(power, -1.0, 1.0);
-    }
-
-    public double getArmAngleDegrees() {
-        return 109.11623 * getPotentiometerVoltage() + 40.01092;
-    }
-
-    public boolean isPotentiometerConnected() {
-        double v = getPotentiometerVoltage();
-        return v > 0.05 && v < 3.25;
-    }
-
-    public double getPotentiometerVoltage() {
-        return armPotentiometer.getVoltage();
-    }
-
     public ArmMode getArmMode() {
         return armMode;
     }
 
-    public void setArmMode(ArmMode armMode) {
-        this.armMode = armMode;
-    }
-
-    public void collectingMode() {
+    public void startCollectingMode() {
         this.armMode = ArmMode.COLLECTING;
         resetShot();
     }
 
-    public void aimingMode() {
+    public void startAimingMode() {
         this.armMode = ArmMode.AIMING;
+
+        reachedAimingHeight = false;
+        reachedReadyToShoot = false;
     }
 
-    public void idleMode() {
+    public void startIdleMode() {
         this.armMode = ArmMode.IDLE;
         resetShot();
     }
 
-    // ONLY USE FOR DEBUGGING/CALIBRATION OPMODES!!
-    // This does not limit the range of motion of the hinge
-    public void unsafePowerArmHinge(double power) {
-        armHinge.setPower(power);
+    public boolean hasReachedAimingHeight() {
+        return reachedAimingHeight;
     }
 
     // --- SHOOTER AND FLIPPER ---
@@ -195,9 +141,9 @@ public class Arm {
     private void handleFlipperFlywheel() {
         if (ejectOverride) {
             if (armMode == ArmMode.AIMING) {
-                flipperFlywheel.setTargetVelocity(FLIPPER_COLLECT_VELOCITY / 4);
+                flipperFlywheel.setTargetRPM(FLIPPER_COLLECT_RPM / 4);
             } else {
-                flipperFlywheel.setTargetVelocity(-FLIPPER_COLLECT_VELOCITY);
+                flipperFlywheel.setTargetRPM(-FLIPPER_COLLECT_RPM);
             }
             return;
         }
@@ -207,11 +153,11 @@ public class Arm {
                 flipperFlywheel.stop();
                 break;
             case COLLECTING:
-                flipperFlywheel.setTargetVelocity(FLIPPER_COLLECT_VELOCITY);
+                flipperFlywheel.setTargetRPM(FLIPPER_COLLECT_RPM);
                 break;
             case AIMING:
                 if (reachedReadyToShoot) {
-                    flipperFlywheel.setTargetVelocity(FLIPPER_SHOOT_VELOCITY);
+                    flipperFlywheel.setTargetRPM(FLIPPER_SHOOTING_RPM);
                 } else {
                     flipperFlywheel.stop();
                 }
@@ -221,16 +167,18 @@ public class Arm {
 
     private void handleShootingFlywheel() {
         if (armMode == ArmMode.COLLECTING) {
-            shooterFlywheel.setTargetVelocity(-tempShootPower / 2);
+            shooterFlywheel.setTargetRPM(SHOOTER_COLLECT_RPM);
             return;
         }
 
         if (armMode == ArmMode.AIMING && !ejectOverride) {
-            shooterFlywheel.setTargetVelocity(tempShootPower);
+            shooterFlywheel.setTargetRPM(SHOOTER_SHOOTING_RPM);
         } else {
-            shooterFlywheel.setTargetVelocity(0);
+            shooterFlywheel.setTargetRPM(0);
         }
     }
+
+    // --- SERVO ---
 
     private void handleGateServo() {
         if (ejectOverride) {
@@ -243,12 +191,20 @@ public class Arm {
             return;
         }
 
-        if (reachedReadyToShoot && timeSinceReachedReadyToShoot.milliseconds() > 500) {
+        if (reachedReadyToShoot) {
             openGate();
         } else {
             closeGate();
         }
     }
+
+    public void closeGate() { gateServo.setPosition(
+            SERVO_CLOSED_POSITION
+    ); }
+
+    public void openGate() { gateServo.setPosition(
+            SERVO_OPEN_POSITION
+    ); }
 
     public boolean readyToShoot() {
         return (armMode == ArmMode.AIMING &&
@@ -261,20 +217,4 @@ public class Arm {
         reachedReadyToShoot = false;
         closeGate();
     }
-
-    public boolean hasReachedReadyToShoot() {
-        return reachedReadyToShoot;
-    }
-
-    public boolean hasReachedAimingHeight() {
-        return reachedAimingHeight;
-    }
-
-    public void closeGate() { gateServo.setPosition(
-            SERVO_CLOSED_POSITION
-    ); }
-
-    public void openGate() { gateServo.setPosition(
-            SERVO_OPEN_POSITION
-    ); }
 }

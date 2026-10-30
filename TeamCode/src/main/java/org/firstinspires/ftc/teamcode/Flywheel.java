@@ -5,24 +5,20 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-
 public class Flywheel {
     DcMotorEx motor;
 
     // This class is mostly reworked from 8628's DECODE season "Shooter" class, and is intended as
-    // a general-purpose flywheel motor controller for both our collector and shooter flywheels.
+    // a general-purpose flywheel motor controller for both our flipper and shooter flywheels.
 
-    // These should be tuned per-flywheel ideally; but just defaults to the values from DECODE
+    // These values should be tuned per-flywheel ideally; but just defaults to the values from DECODE
+    public double Kp = 0.3; // Set Kp to zero when tuning the KVelocity term!!
     public double KVelocity = 0.0243; // power multiplier for rotations per second
-    // FeedBack term is Kp (proportional term)
-    // Set Kp to zero when tuning the KVelocity term!!
-    public double Kp = 0.3;
+    private double ticksPerRevolution = 28 ;  // REV HD Hex 1:1 Motor Encoder
+    private double atSpeedMarginOfError = 50;
+    private boolean holdZeroRPM = true;
 
-    private static final double COUNTS_PER_REV = 28 ;  // REV HD Hex 1:1 Motor Encoder
-    private static final double errorMargin = 0.02;
-
-    private double targetVelocity = 0;
+    private double targetRPM = 0;
 
     public Flywheel(HardwareMap hardwareMap, String name, DcMotorSimple.Direction dir) {
         motor = (DcMotorEx) hardwareMap.get(DcMotor.class, name);
@@ -31,19 +27,26 @@ public class Flywheel {
         motor.setDirection(dir);
     }
 
-    public void updatePower() {
-//        double currentVelocity = this.getVelocity();
-//        double velocityError = targetVelocity - currentVelocity;
-//        // CONTROLLER:  feedfoward = Kvelo + feedback = Kpos
-//        double setPower = targetVelocity * KVelocity + velocityError * Kp;
-//        motor.setPower(setPower);
-        // TODO: Use the above code instead once we get the encoders set up?
-        motor.setPower(targetVelocity);
-    }
-
-    public void setControllerValues(double Kp, double KVelocity) {
+    // Important to use!
+    public void setControllerValues(double Kp, double KVelocity, double ticksPerRevolution, double atSpeedMarginOfError, boolean holdZeroRPM) {
         this.Kp = Kp;
         this.KVelocity = KVelocity;
+        this.ticksPerRevolution = ticksPerRevolution;
+        this.atSpeedMarginOfError = atSpeedMarginOfError;
+        this.holdZeroRPM = holdZeroRPM;
+    }
+
+    public void updatePower() {
+        if (targetRPM == 0 && !holdZeroRPM) {
+            motor.setPower(0);
+            return;
+        }
+
+        double currentVelocity = this.getRPM();
+        double rpmError = targetRPM - currentVelocity;
+        // CONTROLLER:  feedfoward = Kvelo + feedback = Kpos
+        double setPower = targetRPM * KVelocity + rpmError * Kp;
+        motor.setPower(setPower);
     }
 
     public void setPower(double power) {
@@ -51,29 +54,34 @@ public class Flywheel {
     }
 
     public void stop() {
-        targetVelocity = 0;
+        targetRPM = 0;
         motor.setPower(0);
     }
 
-    public void resetTargetVelocity() {
-        targetVelocity = 0;
+    public void resetTargetRPM() {
+        targetRPM = 0;
     }
 
-    public void setTargetVelocity(double velocity) {
-        this.targetVelocity = velocity;
+    public void setTargetRPM(double velocity) {
+        this.targetRPM = velocity;
+    }
+
+    public double getTicks() {
+        return motor.getCurrentPosition();
     }
 
     public double getPower() {
         return motor.getPower();
     }
 
-    public double getVelocity() {
-        return motor.getVelocity(AngleUnit.DEGREES) / COUNTS_PER_REV;
+    public double getRPM() {
+        return (motor.getVelocity() / ticksPerRevolution) * 60;
     }
 
     public boolean atSpeed() {
-        return true;
-//        return (1 - errorMargin) * targetVelocity < this.getVelocity() &&
-//                this.getVelocity() < (1 + errorMargin) * targetVelocity;
+        double currentVelocity = this.getRPM();
+        double rpmError = targetRPM - currentVelocity;
+
+        return Math.abs(rpmError) < atSpeedMarginOfError;
     }
 }

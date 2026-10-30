@@ -39,7 +39,7 @@ public class TeleOp extends OpMode {
     }
 
     public void start() {
-        arm.collectingMode();
+        arm.startIdleMode();
         limelight.lookForBestAimingPipeline();
     }
 
@@ -72,26 +72,18 @@ public class TeleOp extends OpMode {
 
     public void handleModeSwitchingControls() {
         if (gamepad1.rightBumperWasPressed()) {
-            arm.collectingMode();
+            arm.startCollectingMode();
         } else if (gamepad1.leftBumperWasPressed()) {
-            arm.idleMode();
+            arm.startIdleMode();
         } else if (gamepad1.rightTriggerWasPressed()) {
-            arm.aimingMode();
-        }
-
-        if (gamepad1.dpadUpWasPressed()) {
-            arm.tempShootPower = 0.55;
-        } else if (gamepad1.dpadDownWasPressed()) {
-            arm.tempShootPower = 0.7;
+            arm.startAimingMode();
         }
 
         arm.ejectOverride = gamepad1.left_trigger > 0.5;
     }
 
     public void handleTelemetry() {
-        telemetry.addLine("LB: Idle, RB: Collect, RT: Aim + Shoot, LB: Eject");
-        telemetry.addLine("Dpad: Up: Nectar, DOWN: Pollen");
-        telemetry.addData("Shooter velocity", arm.tempShootPower);
+        telemetry.addLine("LB: Idle, RB: Collect, RT: Aim + Shoot, LT: Eject");
         if (!(Blackboard.getAlliance() == Blackboard.Alliance.RED || Blackboard.getAlliance() == Blackboard.Alliance.BLUE)) {
             telemetry.addLine("WARNING: ALLIANCE UNSET! You should re-init!");
         } else {
@@ -99,7 +91,7 @@ public class TeleOp extends OpMode {
         }
         telemetry.addLine("-------");
         telemetry.addData("Mode", arm.getArmMode());
-        telemetry.addData("Current arm angle (degrees)", arm.getArmAngleDegrees());
+        telemetry.addData("Current arm angle (degrees)", arm.armHinge.getArmAngleDegrees());
         telemetry.addData("At good height?", arm.hasReachedAimingHeight());
         telemetry.addData("Ready to shoot?", arm.readyToShoot());
 

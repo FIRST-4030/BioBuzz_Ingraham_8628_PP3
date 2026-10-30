@@ -54,7 +54,7 @@ public class Autonomous extends OpMode {
         shootGameObjects = GroupBuilder.create()
                 .sequential("Prepare for shot")
                     .add(new InstantBehavior(() -> {
-                        arm.aimingMode();
+                        arm.startAimingMode();
                         arm.resetShot();
                     }))
                     .add(new WaitUntil(() -> arm.readyToShoot()))
@@ -63,7 +63,7 @@ public class Autonomous extends OpMode {
                 .build();
 
         activateIdleMode = new InstantBehavior(() -> {
-            arm.idleMode();
+            arm.startIdleMode();
         }, "Activate idle mode");
 
         park = GroupBuilder.create()
@@ -152,12 +152,12 @@ public class Autonomous extends OpMode {
     }
 
     public void start() {
-        arm.collectingMode();
+        arm.startCollectingMode();
         limelight.lookForBestAimingPipeline();
 
         if (startingPosition == StartingPosition.FACING_TIPPED_HIVE) {
             mainStateMachine.setInitialState(forwardASmidgeState);
-            arm.idleMode();
+            arm.startIdleMode();
         } else {
             mainStateMachine.setInitialState(shootAndParkState);
         }
