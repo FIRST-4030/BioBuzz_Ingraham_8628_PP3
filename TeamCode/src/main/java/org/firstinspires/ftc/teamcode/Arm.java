@@ -25,11 +25,30 @@ public class Arm {
     public static final double AIMING_ARM_ANGLE_DEG = 120.0;
 
     private static final double SHOOTER_COLLECT_RPM = -1500;
-    private static final double SHOOTER_SHOOTING_RPM = 2000;
-    private static final double FLIPPER_COLLECT_RPM = 500; // TODO: What should this velocity be?
-    private static final double FLIPPER_SHOOTING_RPM = 500; // TODO: What should this velocity be?
 
-    private static final double SERVO_CLOSED_POSITION = 0.7;
+    public void setSHOOTER_SHOOTING_RPM(double SHOOTER_SHOOTING_RPM) {
+        this.SHOOTER_SHOOTING_RPM = SHOOTER_SHOOTING_RPM;
+    }
+
+    public double getSHOOTER_SHOOTING_RPM() {
+        return SHOOTER_SHOOTING_RPM;
+    }
+
+    private double SHOOTER_SHOOTING_RPM = 2200; // removed static final
+    private static final double FLIPPER_COLLECT_RPM = 200; // TODO: What should this velocity be?
+    // TODO: ALL MAX VELOCITIES ARE 6000 / GEAR RATIO (6000/26 = 230 RPM)
+
+    public void setFLIPPER_SHOOTING_RPM(double FLIPPER_SHOOTING_RPM) {
+        this.FLIPPER_SHOOTING_RPM = FLIPPER_SHOOTING_RPM;
+    }
+
+    public double getFLIPPER_SHOOTING_RPM() {
+        return FLIPPER_SHOOTING_RPM;
+    }
+
+    private double FLIPPER_SHOOTING_RPM = 150; // removed static final
+
+    private static final double SERVO_CLOSED_POSITION = 0.75;
     private static final double SERVO_OPEN_POSITION = 0.15;
 
     public enum ArmMode {
@@ -46,10 +65,10 @@ public class Arm {
         // Both are using default controller values for now, but can be later changed with
         // MotorVelocityController.setControllerValues()
         flipperFlywheel = new Flywheel(hardwareMap, "flipper", DcMotorSimple.Direction.REVERSE);
-        flipperFlywheel.setControllerValues(0.1, 0.005, 753.2, 0.02, false);
+        flipperFlywheel.setControllerValues(0.007, 0.005, 753.2, 0.02, false);
 
         shooterFlywheel = new Flywheel(hardwareMap, "shooter", DcMotorSimple.Direction.REVERSE);
-        shooterFlywheel.setControllerValues(0.007, 0.00046, 56, 0.02, false);
+        shooterFlywheel.setControllerValues(0.007, 0.00046, 56, 30.0, false);
 
         gateServo = hardwareMap.get(Servo.class, "gate_servo");
 

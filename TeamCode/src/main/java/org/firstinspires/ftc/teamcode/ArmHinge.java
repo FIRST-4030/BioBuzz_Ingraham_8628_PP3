@@ -10,7 +10,7 @@ public class ArmHinge {
     public AnalogInput armPotentiometer;
 
     private static final double MIN_ANGLE_DEG = 50.0;
-    private static final double MAX_ANGLE_DEG = 140.0;
+    private static final double MAX_ANGLE_DEG = 132.0;  // TODO: Check angle at 29" arm height
 
     public ArmHinge(HardwareMap hardwareMap) {
         motor = hardwareMap.get(DcMotor.class, "arm");

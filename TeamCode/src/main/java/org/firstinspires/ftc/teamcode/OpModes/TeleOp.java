@@ -9,6 +9,8 @@ import org.firstinspires.ftc.teamcode.Chassis;
 import org.firstinspires.ftc.teamcode.ControlHub;
 import org.firstinspires.ftc.teamcode.Limelight;
 
+import java.util.Locale;
+
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "TeleOp", group="Util")
 public class TeleOp extends OpMode {
 
@@ -66,6 +68,7 @@ public class TeleOp extends OpMode {
                 break;
         }
 
+        handleFlywheelAdjustment();
         arm.update();
         handleTelemetry();
     }
@@ -92,6 +95,12 @@ public class TeleOp extends OpMode {
         telemetry.addLine("-------");
         telemetry.addData("Mode", arm.getArmMode());
         telemetry.addData("Current arm angle (degrees)", arm.armHinge.getArmAngleDegrees());
+        //telemetry.addData("Shooter Shot RPM", arm.getSHOOTER_SHOOTING_RPM());
+        telemetry.addLine(String.format(Locale.US, "Shooter Shot target %.0f ,Current %.0f RPM",
+                arm.getSHOOTER_SHOOTING_RPM(),arm.shooterFlywheel.getRPM()));
+        //telemetry.addData("Flipper Shot RPM", arm.getFLIPPER_SHOOTING_RPM());
+        telemetry.addLine(String.format(Locale.US, "Flipper Shot target %.0f ,Current %.0f RPM",
+                arm.getFLIPPER_SHOOTING_RPM(),arm.flipperFlywheel.getRPM()));
         telemetry.addData("At good height?", arm.hasReachedAimingHeight());
         telemetry.addData("Ready to shoot?", arm.readyToShoot());
 
@@ -104,12 +113,23 @@ public class TeleOp extends OpMode {
 
         if (limelight.resultHasGoodTargets()) {
             telemetry.addData("On target", limelight.isOnTarget());
-            telemetry.addData("Tx", limelight.getXError());
-            telemetry.addData("Ty", limelight.getYError());
+            //telemetry.addData("Tx", limelight.getXError());
+            //telemetry.addData("Ty", limelight.getYError());
         } else {
             telemetry.addLine("No good targets visible");
         }
 
         telemetry.update();
+    }
+    public void handleFlywheelAdjustment() {
+        if (gamepad1.dpadUpWasPressed()) {
+            arm.setSHOOTER_SHOOTING_RPM(arm.getSHOOTER_SHOOTING_RPM()+10);
+        } else if (gamepad1.dpadDownWasPressed()) {
+            arm.setSHOOTER_SHOOTING_RPM(arm.getSHOOTER_SHOOTING_RPM()-10);
+        } else if (gamepad1.yWasPressed()) {
+            arm.setFLIPPER_SHOOTING_RPM(arm.getFLIPPER_SHOOTING_RPM()+10);
+        } else if (gamepad1.aWasPressed()) {
+            arm.setFLIPPER_SHOOTING_RPM(arm.getFLIPPER_SHOOTING_RPM()-10);
+        }
     }
 }
