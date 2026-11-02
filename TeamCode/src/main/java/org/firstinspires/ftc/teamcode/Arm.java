@@ -80,7 +80,7 @@ public class Arm {
             armHinge.stop();
             shooterFlywheel.stop();
             flipperFlywheel.stop();
-            closeGate();
+            openGate();
             return;
         }
 
