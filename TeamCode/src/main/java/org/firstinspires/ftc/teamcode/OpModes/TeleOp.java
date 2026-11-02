@@ -94,20 +94,25 @@ public class TeleOp extends OpMode {
         }
         telemetry.addLine("-------");
         telemetry.addData("Mode", arm.getArmMode());
-        telemetry.addData("Current arm angle (degrees)", arm.armHinge.getArmAngleDegrees());
+//        telemetry.addData("Current arm angle (degrees)", arm.armHinge.getArmAngleDegrees());
+
         //telemetry.addData("Shooter Shot RPM", arm.getSHOOTER_SHOOTING_RPM());
+        //telemetry.addData("Flipper Shot RPM", arm.getFLIPPER_SHOOTING_RPM());
+
         telemetry.addLine(String.format(Locale.US, "Shooter Shot target %.0f ,Current %.0f RPM",
                 arm.getSHOOTER_SHOOTING_RPM(),arm.shooterFlywheel.getRPM()));
-        //telemetry.addData("Flipper Shot RPM", arm.getFLIPPER_SHOOTING_RPM());
+        telemetry.addData("Shooter at speed?", arm.shooterFlywheel.atSpeed());
         telemetry.addLine(String.format(Locale.US, "Flipper Shot target %.0f ,Current %.0f RPM",
                 arm.getFLIPPER_SHOOTING_RPM(),arm.flipperFlywheel.getRPM()));
+        telemetry.addData("Flipper at speed?", arm.shooterFlywheel.atSpeed());
+
         telemetry.addData("At good height?", arm.hasReachedAimingHeight());
         telemetry.addData("Ready to shoot?", arm.readyToShoot());
 
         telemetry.addLine();
 
         telemetry.addData("Pipeline", limelight.getCurrentPipelineName());
-        telemetry.addData("MS since pipeline switch", limelight.getTimeSinceLastPipelineSwitch().milliseconds());
+//        telemetry.addData("MS since pipeline switch", limelight.getTimeSinceLastPipelineSwitch().milliseconds());
 
         telemetry.addLine();
 
