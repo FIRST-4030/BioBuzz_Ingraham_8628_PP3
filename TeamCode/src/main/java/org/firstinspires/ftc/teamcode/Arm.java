@@ -17,40 +17,6 @@ public class Arm {
     private boolean reachedReadyToShoot = false;
     private final ElapsedTime timeSinceReachedReadyToShoot = new ElapsedTime();
 
-    // TODO: THIS IS TEMPORARY
-    public boolean ejectOverride = false;
-
-    // 90 degrees is defined as parallel to the ground.
-    public static final double COLLECTING_ARM_ANGLE_DEG = 50.0;
-    public static final double AIMING_ARM_ANGLE_DEG = 120.0;
-
-    private static final double SHOOTER_COLLECT_RPM = -1500;
-
-    public void setSHOOTER_SHOOTING_RPM(double SHOOTER_SHOOTING_RPM) {
-        this.SHOOTER_SHOOTING_RPM = SHOOTER_SHOOTING_RPM;
-    }
-
-    public double getSHOOTER_SHOOTING_RPM() {
-        return SHOOTER_SHOOTING_RPM;
-    }
-
-    private double SHOOTER_SHOOTING_RPM = 2200; // removed static final
-    private static final double FLIPPER_COLLECT_RPM = 200; // TODO: What should this velocity be?
-    // TODO: ALL MAX VELOCITIES ARE 6000 / GEAR RATIO (6000/26 = 230 RPM)
-
-    public void setFLIPPER_SHOOTING_RPM(double FLIPPER_SHOOTING_RPM) {
-        this.FLIPPER_SHOOTING_RPM = FLIPPER_SHOOTING_RPM;
-    }
-
-    public double getFLIPPER_SHOOTING_RPM() {
-        return FLIPPER_SHOOTING_RPM;
-    }
-
-    private double FLIPPER_SHOOTING_RPM = 150; // removed static final
-
-    private static final double SERVO_CLOSED_POSITION = 0.75;
-    private static final double SERVO_OPEN_POSITION = 0.15;
-
     public enum ArmMode {
         IDLE,
         COLLECTING,
@@ -59,16 +25,51 @@ public class Arm {
 
     private ArmMode armMode = ArmMode.IDLE;
 
+    // TODO: More elegant way to handle this?
+    public boolean ejectOverride = false;
+
+    // --- CONSTANTS ---
+
+    // 90 degrees is defined as parallel to the ground.
+    public static final double COLLECTING_ARM_ANGLE_DEG = 50.0;
+    public static final double AIMING_ARM_ANGLE_DEG = 120.0;
+
+    private static final double SERVO_CLOSED_POSITION = 0.75;
+    private static final double SERVO_OPEN_POSITION = 0.15;
+
+    private static final double SHOOTER_COLLECT_RPM = -1500;
+    private static final double FLIPPER_COLLECT_RPM = 200; // TODO: What should this velocity be?
+
+    // TODO: ALL MAX VELOCITIES ARE 6000 / GEAR RATIO (6000/26 = 230 RPM)
+    private double shooter_shooting_rpm = 2200;
+    private double flipper_shooting_rpm = 150;
+
+    public void setShooter_shooting_rpm(double shooter_shooting_rpm) {
+        this.shooter_shooting_rpm = shooter_shooting_rpm;
+    }
+
+    public double getShooter_shooting_rpm() {
+        return shooter_shooting_rpm;
+    }
+
+    public void setFlipper_shooting_rpm(double flipper_shooting_rpm) {
+        this.flipper_shooting_rpm = flipper_shooting_rpm;
+    }
+
+    public double getFlipper_shooting_rpm() {
+        return flipper_shooting_rpm;
+    }
+
     public Arm(HardwareMap hardwareMap, Limelight limelight) {
         armHinge = new ArmHinge(hardwareMap);
 
         // Both are using default controller values for now, but can be later changed with
         // MotorVelocityController.setControllerValues()
         flipperFlywheel = new Flywheel(hardwareMap, "flipper", DcMotorSimple.Direction.REVERSE);
-        flipperFlywheel.setControllerValues(0.007, 0.005, 753.2, 0.02, false);
+        flipperFlywheel.setControllerValues(0.007, 0.005, 753.2, 30.0, false);
 
         shooterFlywheel = new Flywheel(hardwareMap, "shooter", DcMotorSimple.Direction.REVERSE);
-        shooterFlywheel.setControllerValues(0.007, 0.00046, 56, 30.0, false);
+        shooterFlywheel.setControllerValues(0.007, 0.00046, 56, 50.0, false);
 
         gateServo = hardwareMap.get(Servo.class, "gate_servo");
 
@@ -155,6 +156,10 @@ public class Arm {
         return reachedAimingHeight;
     }
 
+    public boolean hasReachedReadyToShoot() {
+        return reachedReadyToShoot;
+    }
+
     // --- SHOOTER AND FLIPPER ---
 
     private void handleFlipperFlywheel() {
@@ -176,7 +181,7 @@ public class Arm {
                 break;
             case AIMING:
                 if (reachedReadyToShoot) {
-                    flipperFlywheel.setTargetRPM(FLIPPER_SHOOTING_RPM);
+                    flipperFlywheel.setTargetRPM(flipper_shooting_rpm);
                 } else {
                     flipperFlywheel.stop();
                 }
@@ -191,10 +196,24 @@ public class Arm {
         }
 
         if (armMode == ArmMode.AIMING && !ejectOverride) {
-            shooterFlywheel.setTargetRPM(SHOOTER_SHOOTING_RPM);
+            shooterFlywheel.setTargetRPM(shooter_shooting_rpm);
         } else {
             shooterFlywheel.setTargetRPM(0);
         }
+    }
+
+    private double calculateGoodShooterShootingRPM() {
+        if (limelight.resultHasGoodTargets()) {
+            return 2200; // TODO: some sort of default shooting rpm?
+        }
+        return limelight.getTa(); // TODO: Make actual equation for this calculation based on Ta
+    }
+
+    private double calculateGoodFlipperShootingRPM() {
+        if (limelight.resultHasGoodTargets()) {
+            return 2200; // TODO: some sort of default shooting rpm?
+        }
+        return limelight.getTa(); // TODO: Make actual equation for this calculation based on Ta
     }
 
     // --- SERVO ---
@@ -227,7 +246,7 @@ public class Arm {
 
     public boolean readyToShoot() {
         return (armMode == ArmMode.AIMING &&
-                reachedAimingHeight &&
+//                reachedAimingHeight &&
                 limelight.isOnTarget() &&
                 shooterFlywheel.atSpeed());
     }

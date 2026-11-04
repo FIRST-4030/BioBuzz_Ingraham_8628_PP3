@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.OpModes;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.generalUtilities.Blackboard;
 import org.firstinspires.ftc.teamcode.Arm;
@@ -20,6 +21,9 @@ public class TeleOp extends OpMode {
     Limelight limelight;
     Chassis chassis;
     Arm arm;
+
+    ElapsedTime timeSinceStartedShooting = new ElapsedTime();
+    boolean wasShooting = false;
 
     @Override
     public void init() {
@@ -82,7 +86,17 @@ public class TeleOp extends OpMode {
             arm.startAimingMode();
         }
 
+        if (!wasShooting && arm.hasReachedReadyToShoot()) {
+            timeSinceStartedShooting.reset();
+        }
+
+        if (arm.getArmMode() == Arm.ArmMode.AIMING && arm.hasReachedReadyToShoot() && timeSinceStartedShooting.milliseconds() > 1000) {
+            arm.startCollectingMode();
+        }
+
         arm.ejectOverride = gamepad1.left_trigger > 0.5;
+
+        wasShooting = arm.hasReachedReadyToShoot();
     }
 
     public void handleTelemetry() {
@@ -94,16 +108,16 @@ public class TeleOp extends OpMode {
         }
         telemetry.addLine("-------");
         telemetry.addData("Mode", arm.getArmMode());
-//        telemetry.addData("Current arm angle (degrees)", arm.armHinge.getArmAngleDegrees());
+        telemetry.addData("Current arm angle (degrees)", arm.armHinge.getArmAngleDegrees());
 
         //telemetry.addData("Shooter Shot RPM", arm.getSHOOTER_SHOOTING_RPM());
         //telemetry.addData("Flipper Shot RPM", arm.getFLIPPER_SHOOTING_RPM());
 
         telemetry.addLine(String.format(Locale.US, "Shooter Shot target %.0f ,Current %.0f RPM",
-                arm.getSHOOTER_SHOOTING_RPM(),arm.shooterFlywheel.getRPM()));
+                arm.getShooter_shooting_rpm(),arm.shooterFlywheel.getRPM()));
         telemetry.addData("Shooter at speed?", arm.shooterFlywheel.atSpeed());
         telemetry.addLine(String.format(Locale.US, "Flipper Shot target %.0f ,Current %.0f RPM",
-                arm.getFLIPPER_SHOOTING_RPM(),arm.flipperFlywheel.getRPM()));
+                arm.getFlipper_shooting_rpm(),arm.flipperFlywheel.getRPM()));
         telemetry.addData("Flipper at speed?", arm.shooterFlywheel.atSpeed());
 
         telemetry.addData("At good height?", arm.hasReachedAimingHeight());
@@ -126,15 +140,16 @@ public class TeleOp extends OpMode {
 
         telemetry.update();
     }
+
     public void handleFlywheelAdjustment() {
         if (gamepad1.dpadUpWasPressed()) {
-            arm.setSHOOTER_SHOOTING_RPM(arm.getSHOOTER_SHOOTING_RPM()+10);
+            arm.setShooter_shooting_rpm(arm.getShooter_shooting_rpm()+10);
         } else if (gamepad1.dpadDownWasPressed()) {
-            arm.setSHOOTER_SHOOTING_RPM(arm.getSHOOTER_SHOOTING_RPM()-10);
+            arm.setShooter_shooting_rpm(arm.getShooter_shooting_rpm()-10);
         } else if (gamepad1.yWasPressed()) {
-            arm.setFLIPPER_SHOOTING_RPM(arm.getFLIPPER_SHOOTING_RPM()+10);
+            arm.setFlipper_shooting_rpm(arm.getFlipper_shooting_rpm()+10);
         } else if (gamepad1.aWasPressed()) {
-            arm.setFLIPPER_SHOOTING_RPM(arm.getFLIPPER_SHOOTING_RPM()-10);
+            arm.setFlipper_shooting_rpm(arm.getFlipper_shooting_rpm()-10);
         }
     }
 }
