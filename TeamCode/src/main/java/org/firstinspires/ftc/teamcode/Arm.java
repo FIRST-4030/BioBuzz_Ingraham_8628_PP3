@@ -14,7 +14,6 @@ public class Arm {
     Limelight limelight;
 
     private boolean reachedAimingHeight = false;
-    private boolean reachedReadyToShoot = false;
     private final ElapsedTime timeSinceReachedReadyToShoot = new ElapsedTime();
 
     public enum ArmMode {
@@ -32,7 +31,7 @@ public class Arm {
 
     // 90 degrees is defined as parallel to the ground.
     public static final double COLLECTING_ARM_ANGLE_DEG = 50.0;
-    public static final double AIMING_ARM_ANGLE_DEG = 125.0;
+    public static final double AIMING_ARM_ANGLE_DEG = 118.0;
 
     private static final double SERVO_CLOSED_POSITION = 0.75;
     private static final double SERVO_OPEN_POSITION = 0.15;
@@ -66,10 +65,10 @@ public class Arm {
         // Both are using default controller values for now, but can be later changed with
         // MotorVelocityController.setControllerValues()
         flipperFlywheel = new Flywheel(hardwareMap, "flipper", DcMotorSimple.Direction.REVERSE);
-        flipperFlywheel.setControllerValues(0.007, 0.005, 753.2, 30.0, false);
+        flipperFlywheel.setControllerValues(0.007, 0.005, 753.2, 100.0, false);
 
         shooterFlywheel = new Flywheel(hardwareMap, "shooter", DcMotorSimple.Direction.REVERSE);
-        shooterFlywheel.setControllerValues(0.007, 0.00046, 56, 50.0, false);
+        shooterFlywheel.setControllerValues(0.007, 0.00046, 56, 100.0, false);
 
         gateServo = hardwareMap.get(Servo.class, "gate_servo");
 
@@ -125,12 +124,12 @@ public class Arm {
             reachedAimingHeight = true;
         }
 
-        if (readyToShoot()) {
-            if (!reachedReadyToShoot) {
-                timeSinceReachedReadyToShoot.reset();
-            }
-            reachedReadyToShoot = true;
-        }
+//        if (readyToShoot()) {
+//            if (!reachedAimingHeight) {
+//                timeSinceReachedReadyToShoot.reset();
+//            }
+//            reachedAimingHeight = true;
+//        }
     }
 
     public ArmMode getArmMode() {
@@ -146,7 +145,7 @@ public class Arm {
         this.armMode = ArmMode.AIMING;
 
         reachedAimingHeight = false;
-        reachedReadyToShoot = false;
+//        reachedReadyToShoot = false;
     }
 
     public void startIdleMode() {
@@ -158,9 +157,9 @@ public class Arm {
         return reachedAimingHeight;
     }
 
-    public boolean hasReachedReadyToShoot() {
-        return reachedReadyToShoot;
-    }
+//    public boolean hasReachedReadyToShoot() {
+//        return reachedReadyToShoot;
+//    }
 
     // --- SHOOTER AND FLIPPER ---
 
@@ -182,7 +181,7 @@ public class Arm {
                 flipperFlywheel.setTargetRPM(FLIPPER_COLLECT_RPM);
                 break;
             case AIMING:
-                if (reachedReadyToShoot) {
+                if (readyToShoot()) {
                     flipperFlywheel.setTargetRPM(flipper_shooting_rpm);
                 } else {
                     flipperFlywheel.stop();
@@ -231,7 +230,7 @@ public class Arm {
             return;
         }
 
-        if (reachedReadyToShoot) {
+        if (readyToShoot()) {
             openGate();
         } else {
             closeGate();
@@ -254,7 +253,7 @@ public class Arm {
     }
 
     public void resetShot() {
-        reachedReadyToShoot = false;
+//        reachedReadyToShoot = false;
         closeGate();
     }
 }

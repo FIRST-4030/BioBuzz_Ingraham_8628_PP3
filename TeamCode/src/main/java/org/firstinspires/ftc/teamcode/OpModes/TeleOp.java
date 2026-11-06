@@ -22,9 +22,6 @@ public class TeleOp extends OpMode {
     Chassis chassis;
     Arm arm;
 
-    ElapsedTime timeSinceStartedShooting = new ElapsedTime();
-    boolean wasShooting = false;
-
     @Override
     public void init() {
         controlHub = new ControlHub(hardwareMap);
@@ -87,17 +84,7 @@ public class TeleOp extends OpMode {
             arm.startAimingMode();
         }
 
-        if (!wasShooting && arm.hasReachedReadyToShoot()) {
-            timeSinceStartedShooting.reset();
-        }
-
-        if (arm.getArmMode() == Arm.ArmMode.AIMING && arm.hasReachedReadyToShoot() && timeSinceStartedShooting.milliseconds() > 1000) {
-            arm.startCollectingMode();
-        }
-
         arm.ejectOverride = gamepad1.left_trigger > 0.5;
-
-        wasShooting = arm.hasReachedReadyToShoot();
     }
 
     public void handleTelemetry() {
