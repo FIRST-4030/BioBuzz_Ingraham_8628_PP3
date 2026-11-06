@@ -56,7 +56,8 @@ public class TeleOp extends OpMode {
         switch (arm.getArmMode()) {
             case IDLE:
             case COLLECTING:
-                limelight.lookForBestCollectingPipeline();
+//                limelight.lookForBestCollectingPipeline();
+                limelight.lookForBestAimingPipeline(); // TODO: Better default?
                 chassis.drive(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
                 break;
             case AIMING:
@@ -109,6 +110,7 @@ public class TeleOp extends OpMode {
         telemetry.addLine("-------");
         telemetry.addData("Mode", arm.getArmMode());
         telemetry.addData("Current arm angle (degrees)", arm.armHinge.getArmAngleDegrees());
+        telemetry.addData("Target arm angle (degrees)", arm.armHinge.getClippedTargetAngleDegrees());
 
         //telemetry.addData("Shooter Shot RPM", arm.getSHOOTER_SHOOTING_RPM());
         //telemetry.addData("Flipper Shot RPM", arm.getFLIPPER_SHOOTING_RPM());

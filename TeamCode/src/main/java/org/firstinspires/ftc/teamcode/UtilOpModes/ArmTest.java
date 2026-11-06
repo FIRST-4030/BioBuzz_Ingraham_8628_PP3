@@ -2,15 +2,12 @@ package org.firstinspires.ftc.teamcode.UtilOpModes;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.generalUtilities.Blackboard;
 import org.firstinspires.ftc.teamcode.Arm;
 import org.firstinspires.ftc.teamcode.Chassis;
 import org.firstinspires.ftc.teamcode.ControlHub;
 import org.firstinspires.ftc.teamcode.Limelight;
-
-import java.util.Locale;
 
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "Arm Test", group="Util")
 public class ArmTest extends OpMode {
@@ -51,22 +48,24 @@ public class ArmTest extends OpMode {
     public void loop() {
         limelight.updateData(); // This line is vital, and should be called first in the loop
 
-        arm.armHinge.driveArmToAngle(targetAngle);
+        arm.armHinge.setTargetAngleDegrees(targetAngle);
+        arm.armHinge.driveArmToTargetAngle();
 
-        if (gamepad1.dpadUpWasPressed()) {
-            targetAngle += 5;
-        } else if (gamepad1.dpadDownWasPressed()) {
-            targetAngle -= 5;
-        }
+//        if (gamepad1.dpadUpWasPressed()) {
+//            targetAngle += 5;
+//        } else if (gamepad1.dpadDownWasPressed()) {
+//            targetAngle -= 5;
+//        }
+        targetAngle = gamepad1.left_stick_y * 60 + 90;
 
         if (gamepad1.aWasPressed()) {
             arm.armHinge.kP -= 0.01;
         } else if (gamepad1.yWasPressed()) {
             arm.armHinge.kP += 0.01;
         } else if (gamepad1.xWasPressed()) {
-            arm.armHinge.kG -= 0.1;
+            arm.armHinge.kG -= 0.01;
         } else if (gamepad1.bWasPressed()) {
-            arm.armHinge.kG += 0.1;
+            arm.armHinge.kG += 0.01;
         }
 
 
@@ -80,7 +79,11 @@ public class ArmTest extends OpMode {
 
         telemetry.addLine();
         telemetry.addData("kP", arm.armHinge.kP);
+        telemetry.addLine("[A = -0.01, Y = +0.01]");
+
+        telemetry.addLine();
         telemetry.addData("kG", arm.armHinge.kG);
+        telemetry.addLine("[X = -0.01, B = +0.01]");
 
         telemetry.update();
     }

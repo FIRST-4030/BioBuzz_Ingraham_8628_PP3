@@ -32,7 +32,7 @@ public class Arm {
 
     // 90 degrees is defined as parallel to the ground.
     public static final double COLLECTING_ARM_ANGLE_DEG = 50.0;
-    public static final double AIMING_ARM_ANGLE_DEG = 120.0;
+    public static final double AIMING_ARM_ANGLE_DEG = 125.0;
 
     private static final double SERVO_CLOSED_POSITION = 0.75;
     private static final double SERVO_OPEN_POSITION = 0.15;
@@ -41,8 +41,8 @@ public class Arm {
     private static final double FLIPPER_COLLECT_RPM = 200; // TODO: What should this velocity be?
 
     // TODO: ALL MAX VELOCITIES ARE 6000 / GEAR RATIO (6000/26 = 230 RPM)
-    private double shooter_shooting_rpm = 2200;
-    private double flipper_shooting_rpm = 150;
+    private double shooter_shooting_rpm = 2100;
+    private double flipper_shooting_rpm = 210;
 
     public void setShooter_shooting_rpm(double shooter_shooting_rpm) {
         this.shooter_shooting_rpm = shooter_shooting_rpm;
@@ -100,7 +100,8 @@ public class Arm {
         switch (armMode) {
             case IDLE:
             case COLLECTING:
-                armHinge.driveArmToAngle(COLLECTING_ARM_ANGLE_DEG);
+                armHinge.setTargetAngleDegrees(COLLECTING_ARM_ANGLE_DEG);
+                armHinge.driveArmToTargetAngle();
                 break;
             case AIMING:
                 aimingModeArmHingeUpdate();
@@ -117,7 +118,8 @@ public class Arm {
             goalArmAngleDegrees = currentArmAngleDegrees + angleOffset;
         }
 
-        armHinge.driveArmToAngle(goalArmAngleDegrees);
+        armHinge.setTargetAngleDegrees(goalArmAngleDegrees);
+        armHinge.driveArmToTargetAngle();
 
         if (currentArmAngleDegrees > AIMING_ARM_ANGLE_DEG - 10) {
             reachedAimingHeight = true;
@@ -165,7 +167,7 @@ public class Arm {
     private void handleFlipperFlywheel() {
         if (ejectOverride) {
             if (armMode == ArmMode.AIMING) {
-                flipperFlywheel.setTargetRPM(FLIPPER_COLLECT_RPM / 4);
+                flipperFlywheel.setTargetRPM(-FLIPPER_COLLECT_RPM / 6);
             } else {
                 flipperFlywheel.setTargetRPM(-FLIPPER_COLLECT_RPM);
             }

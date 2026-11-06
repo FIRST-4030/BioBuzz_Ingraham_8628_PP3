@@ -9,11 +9,13 @@ public class ArmHinge {
     public DcMotor motor;
     public AnalogInput armPotentiometer;
 
-    private static final double MIN_ANGLE_DEG = 50.0;
+    private static final double MIN_ANGLE_DEG = 55.0;
     private static final double MAX_ANGLE_DEG = 125.0;  // TODO: Check angle at 29" arm height
 
-    public double kP = 0.01;
-    public double kG = 0.5;
+    public double kP = 0.04;
+    public double kG = 0.28;
+
+    public double targetAngle = 90;
 
     public ArmHinge(HardwareMap hardwareMap) {
         motor = hardwareMap.get(DcMotor.class, "arm");
@@ -22,9 +24,17 @@ public class ArmHinge {
         armPotentiometer = hardwareMap.get(AnalogInput.class, "arm_potentiometer");
     }
 
-    public void driveArmToAngle(double angleDegrees) {
+    public void setTargetAngleDegrees(double targetAngle) {
+        this.targetAngle = targetAngle;
+    }
+
+    public double getClippedTargetAngleDegrees() {
+        return Range.clip(this.targetAngle, MIN_ANGLE_DEG, MAX_ANGLE_DEG);
+    }
+
+    public void driveArmToTargetAngle() {
         double currentArmAngleDegrees = this.getArmAngleDegrees();
-        double power = calculateHingePowerForAngle(currentArmAngleDegrees, angleDegrees);
+        double power = calculateHingePowerForAngle(currentArmAngleDegrees, targetAngle);
 
         motor.setPower(power);
     }
@@ -39,7 +49,7 @@ public class ArmHinge {
         double error = clippedGoalArmAngleDegrees - currentArmAngleDegrees;
 
         // Angle is relative to ground (90° = horizontal)
-        double feedForward = kG * Math.cos(Math.toRadians(currentArmAngleDegrees));
+        double feedForward = kG * Math.cos(Math.toRadians(currentArmAngleDegrees - 90));
         double power = (error * kP) + feedForward;
         return Range.clip(power, -1.0, 1.0);
     }
