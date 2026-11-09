@@ -40,7 +40,7 @@ public class Arm {
     private static final double FLIPPER_COLLECT_RPM = 200; // TODO: What should this velocity be?
 
     // TODO: ALL MAX VELOCITIES ARE 6000 / GEAR RATIO (6000/26 = 230 RPM)
-    private double shooter_shooting_rpm = 2100;
+    private double shooter_shooting_rpm = 2600;
     private double flipper_shooting_rpm = 210;
 
     public void setShooter_shooting_rpm(double shooter_shooting_rpm) {
@@ -115,6 +115,10 @@ public class Arm {
         if (limelight != null && limelight.resultHasGoodTargets() && reachedAimingHeight) {
             double angleOffset = limelight.getYError();
             goalArmAngleDegrees = currentArmAngleDegrees + angleOffset;
+        }
+
+        if (ejectOverride) {
+            goalArmAngleDegrees = 125;
         }
 
         armHinge.setTargetAngleDegrees(goalArmAngleDegrees);

@@ -22,6 +22,10 @@ public class TeleOp extends OpMode {
     Chassis chassis;
     Arm arm;
 
+    ElapsedTime flowerQueueTimer = new ElapsedTime();
+    boolean flowerQueued = false;
+    double FLOWER_QUEUE_MS = 550;
+
     @Override
     public void init() {
         controlHub = new ControlHub(hardwareMap);
@@ -49,6 +53,7 @@ public class TeleOp extends OpMode {
     public void loop() {
         limelight.updateData(); // This line is vital, and should be called first in the loop
         handleModeSwitchingControls();
+        handleFlowerControls();
 
         switch (arm.getArmMode()) {
             case IDLE:
@@ -84,7 +89,26 @@ public class TeleOp extends OpMode {
             arm.startAimingMode();
         }
 
-        arm.ejectOverride = gamepad1.left_trigger > 0.5;
+        if (!flowerQueued) {
+            arm.ejectOverride = gamepad1.left_trigger > 0.5;
+        }
+    }
+
+    public void handleFlowerControls() {
+        if (gamepad1.startWasPressed()) {
+            flowerQueueTimer.reset();
+            flowerQueued = true;
+            arm.startIdleMode();
+        }
+
+        if (flowerQueued) {
+            arm.ejectOverride = true;
+
+            if (flowerQueueTimer.milliseconds() > FLOWER_QUEUE_MS) {
+                flowerQueued = false;
+                arm.startIdleMode();
+            }
+        }
     }
 
     public void handleTelemetry() {

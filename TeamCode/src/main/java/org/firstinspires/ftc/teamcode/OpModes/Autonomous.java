@@ -32,7 +32,7 @@ public class Autonomous extends OpMode {
     StateMachine mainStateMachine;
     State shootAndParkState, forwardASmidgeState;
 
-    Behavior shootGameObjects, activateIdleMode, park, driveForwardASmidge;
+    Behavior shootGameObjects, activateIdleMode, park, parkNear;
 
     enum StartingPosition {
         FACING_TIPPED_HIVE,
@@ -52,7 +52,14 @@ public class Autonomous extends OpMode {
         arm.closeGate();
 
         shootGameObjects = GroupBuilder.create()
-                .sequential("Prepare for shot")
+                .sequential()
+                    .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
+                        .add(new WaitMS(300))
+                        .add(new UpdatingBehavior(() -> {
+                            chassis.drive(1, 0, 0);
+                        }))
+                    .end()
+                    .add(new InstantBehavior(() -> chassis.stopMotors()))
                     .add(new InstantBehavior(() -> {
                         arm.startAimingMode();
                         arm.resetShot();
@@ -69,33 +76,33 @@ public class Autonomous extends OpMode {
         park = GroupBuilder.create()
                 .sequential("Park")
                     .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
-                        .add(new WaitMS(1500))
+                        .add(new WaitMS(2500))
                         .add(new UpdatingBehavior(() -> {
-                            chassis.drive(1, -1, 0);
+                            chassis.drive(0.25, -0.5, 0);
                         }))
                     .end()
                     .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
-                        .add(new WaitMS(1100))
+                        .add(new WaitMS(2000))
                         .add(new UpdatingBehavior(() -> {
-                            chassis.drive(1, 0, 0);
+                            chassis.drive(0.5, 0, 0);
                         }))
                     .end()
                     .add(new InstantBehavior(() -> chassis.stopMotors()))
-                    .add(new WaitMS(200))
-                    .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
-                        .add(new WaitMS(150))
-                        .add(new UpdatingBehavior(() -> {
-                            chassis.drive(0, -1, 0);
-                        }))
-                    .end()
-                    .add(new InstantBehavior(() -> chassis.stopMotors()))
+//                    .add(new WaitMS(200))
+//                    .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
+//                        .add(new WaitMS(300))
+//                        .add(new UpdatingBehavior(() -> {
+//                            chassis.drive(0, -1, 0);
+//                        }))
+//                    .end()
+//                    .add(new InstantBehavior(() -> chassis.stopMotors()))
                 .end()
                 .build();
 
-        driveForwardASmidge = GroupBuilder.create()
+        parkNear = GroupBuilder.create()
                 .sequential()
                     .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
-                        .add(new WaitMS(400))
+                        .add(new WaitMS(475))
                         .add(new UpdatingBehavior(() -> {
                             chassis.drive(1, 0, 0);
                         }))
@@ -127,7 +134,7 @@ public class Autonomous extends OpMode {
         );
 
         forwardASmidgeState = new TaskState(
-                driveForwardASmidge,
+                parkNear,
                 () -> null
         );
     }
@@ -136,8 +143,8 @@ public class Autonomous extends OpMode {
         limelight.updateData(); // This line is vital, and should be called first in the loop
 
         controlHub.processBotIdentificationTelemetry(telemetry);
-        telemetry.addLine("RB + Y: HIVE UPRIGHT");
-        telemetry.addLine("RB + A: HIVE DOWN");
+        telemetry.addLine("[ RB + Y: FACING UPRIGHT HIVE ]");
+        telemetry.addLine("[ RB + A: FACING TIPPED HIVE ]");
         telemetry.addData("Start position:", startingPosition);
         telemetry.addLine();
         Blackboard.initLoopProcess(telemetry, gamepad1);
@@ -152,6 +159,7 @@ public class Autonomous extends OpMode {
     }
 
     public void start() {
+        imu.resetYaw();
         arm.startCollectingMode();
         limelight.lookForBestAimingPipeline();
 

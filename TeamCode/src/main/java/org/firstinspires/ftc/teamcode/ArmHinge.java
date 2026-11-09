@@ -9,8 +9,8 @@ public class ArmHinge {
     public DcMotor motor;
     public AnalogInput armPotentiometer;
 
-    private static final double MIN_ANGLE_DEG = 55.0;
-    private static final double MAX_ANGLE_DEG = 125.0;  // TODO: Check angle at 29" arm height
+    public static final double MIN_ANGLE_DEG = 55.0;
+    public static final double MAX_ANGLE_DEG = 125.0;  // TODO: Check angle at 29" arm height
 
     public double kP = 0.04;
     public double kG = 0.28;
