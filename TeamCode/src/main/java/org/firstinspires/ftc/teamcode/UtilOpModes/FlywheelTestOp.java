@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.UtilOpModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -11,6 +12,7 @@ import org.firstinspires.ftc.teamcode.ControlHub;
 import org.firstinspires.ftc.teamcode.Flywheel;
 import org.firstinspires.ftc.teamcode.Limelight;
 
+@Disabled
 @TeleOp(name = "Flywheel TestOp", group="Util")
 public class FlywheelTestOp extends OpMode {
 

@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.UtilOpModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.IMU;
 
@@ -11,6 +12,7 @@ import org.firstinspires.ftc.teamcode.Limelight;
 
 import java.util.Locale;
 
+@Disabled
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name = "ShootingTest", group="Util")
 public class ShootingTest extends OpMode {
 

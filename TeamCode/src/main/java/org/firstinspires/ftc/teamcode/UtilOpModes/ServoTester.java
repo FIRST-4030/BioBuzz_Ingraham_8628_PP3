@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.UtilOpModes;
 
 import android.annotation.SuppressLint;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -12,6 +13,8 @@ import com.qualcomm.robotcore.hardware.Servo;
  * @author Dennis O'Brien
  * @date 11/13/2025
  */
+
+@Disabled
 @TeleOp(name = "ServoTester", group="Util")
 public class ServoTester extends OpMode {
 //    @Override
