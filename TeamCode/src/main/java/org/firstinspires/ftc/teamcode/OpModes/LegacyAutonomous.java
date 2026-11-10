@@ -4,10 +4,10 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.generalUtilities.Blackboard;
-import org.firstinspires.ftc.teamcode.Arm;
-import org.firstinspires.ftc.teamcode.Chassis;
-import org.firstinspires.ftc.teamcode.ControlHub;
-import org.firstinspires.ftc.teamcode.Limelight;
+import org.firstinspires.ftc.teamcode.Hardware.Arm;
+import org.firstinspires.ftc.teamcode.Hardware.Chassis;
+import org.firstinspires.ftc.teamcode.Hardware.ControlHub;
+import org.firstinspires.ftc.teamcode.Hardware.Limelight;
 import org.firstinspires.ftc.teamcode.TempBehaviorSystem.Behavior;
 import org.firstinspires.ftc.teamcode.TempBehaviorSystem.GroupBuilder;
 import org.firstinspires.ftc.teamcode.TempBehaviorSystem.ParallelGroup;
@@ -19,8 +19,8 @@ import org.firstinspires.ftc.teamcode.TempBehaviorSystem.UserBehaviors.UpdatingB
 import org.firstinspires.ftc.teamcode.TempBehaviorSystem.UserBehaviors.WaitMS;
 import org.firstinspires.ftc.teamcode.TempBehaviorSystem.UserBehaviors.WaitUntil;
 
-@com.qualcomm.robotcore.eventloop.opmode.Autonomous(name = "Autonomous", group="Util")
-public class Autonomous extends OpMode {
+@com.qualcomm.robotcore.eventloop.opmode.Autonomous(name = "Legacy Autonomous")
+public class LegacyAutonomous extends OpMode {
 
     ControlHub controlHub;
 

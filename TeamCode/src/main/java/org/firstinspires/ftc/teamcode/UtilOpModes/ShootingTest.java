@@ -5,10 +5,10 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.generalUtilities.Blackboard;
-import org.firstinspires.ftc.teamcode.Arm;
-import org.firstinspires.ftc.teamcode.Chassis;
-import org.firstinspires.ftc.teamcode.ControlHub;
-import org.firstinspires.ftc.teamcode.Limelight;
+import org.firstinspires.ftc.teamcode.Hardware.Arm;
+import org.firstinspires.ftc.teamcode.Hardware.Chassis;
+import org.firstinspires.ftc.teamcode.Hardware.ControlHub;
+import org.firstinspires.ftc.teamcode.Hardware.Limelight;
 
 import java.util.Locale;
 

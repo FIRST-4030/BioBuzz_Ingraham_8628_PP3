@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.TempBehaviorSystem.Behavior;
-import org.firstinspires.ftc.teamcode.Chassis;
+import org.firstinspires.ftc.teamcode.Hardware.Chassis;
 
 /**
  * Behavior for robot-centric driving using a gamepad. Never completes.

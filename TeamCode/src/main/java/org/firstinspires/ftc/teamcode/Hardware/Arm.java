@@ -1,5 +1,8 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.Hardware;
 
+import static com.pedropathing.ivy.commands.Commands.infinite;
+
+import com.pedropathing.ivy.Command;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -259,5 +262,11 @@ public class Arm {
     public void resetShot() {
 //        reachedReadyToShoot = false;
         closeGate();
+    }
+
+    // --- Ivy ---
+
+    public Command periodic() {
+        return infinite(this::update);
     }
 }

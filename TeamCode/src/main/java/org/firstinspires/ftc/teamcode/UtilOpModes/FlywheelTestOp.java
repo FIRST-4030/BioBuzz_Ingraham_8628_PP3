@@ -7,10 +7,10 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.generalUtilities.Blackboard;
-import org.firstinspires.ftc.teamcode.Chassis;
-import org.firstinspires.ftc.teamcode.ControlHub;
-import org.firstinspires.ftc.teamcode.Flywheel;
-import org.firstinspires.ftc.teamcode.Limelight;
+import org.firstinspires.ftc.teamcode.Hardware.Chassis;
+import org.firstinspires.ftc.teamcode.Hardware.ControlHub;
+import org.firstinspires.ftc.teamcode.Hardware.Flywheel;
+import org.firstinspires.ftc.teamcode.Hardware.Limelight;
 
 @Disabled
 @TeleOp(name = "Flywheel TestOp", group="Util")

@@ -1,5 +1,8 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.Hardware;
 
+import static com.pedropathing.ivy.commands.Commands.infinite;
+
+import com.pedropathing.ivy.Command;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.LLStatus;
@@ -219,5 +222,11 @@ public class Limelight {
 
     public LLResult getLatestResult() {
         return internalLatestResult;
+    }
+
+    // --- Ivy ---
+
+    public Command periodic() {
+        return infinite(this::updateData);
     }
 }
