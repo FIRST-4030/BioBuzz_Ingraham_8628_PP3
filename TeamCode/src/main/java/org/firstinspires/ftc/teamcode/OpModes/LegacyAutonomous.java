@@ -4,8 +4,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.generalUtilities.Blackboard;
-import org.firstinspires.ftc.teamcode.Hardware.Arm;
 import org.firstinspires.ftc.teamcode.Hardware.Chassis;
+import org.firstinspires.ftc.teamcode.Hardware.LegacyArm;
 import org.firstinspires.ftc.teamcode.Hardware.ControlHub;
 import org.firstinspires.ftc.teamcode.Hardware.Limelight;
 import org.firstinspires.ftc.teamcode.TempBehaviorSystem.Behavior;
@@ -27,7 +27,7 @@ public class LegacyAutonomous extends OpMode {
     IMU imu;
     Limelight limelight;
     Chassis chassis;
-    Arm arm;
+    LegacyArm legacyArm;
 
     StateMachine mainStateMachine;
     State shootAndParkState, forwardASmidgeState;
@@ -48,29 +48,29 @@ public class LegacyAutonomous extends OpMode {
         imu = hardwareMap.get(IMU.class, "imu");
         limelight = new Limelight(hardwareMap);
         chassis = new Chassis(hardwareMap);
-        arm = new Arm(hardwareMap, limelight);
-        arm.closeGate();
+        legacyArm = new LegacyArm(hardwareMap, limelight);
+        legacyArm.closeGate();
 
         shootGameObjects = GroupBuilder.create()
                 .sequential()
                     .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
                         .add(new WaitMS(300))
                         .add(new UpdatingBehavior(() -> {
-                            chassis.drive(1, 0, 0);
+                            chassis.directDrive(1, 0, 0);
                         }))
                     .end()
                     .add(new InstantBehavior(() -> chassis.stopMotors()))
                     .add(new InstantBehavior(() -> {
-                        arm.startAimingMode();
-                        arm.resetShot();
+                        legacyArm.startAimingMode();
+                        legacyArm.resetShot();
                     }))
-                    .add(new WaitUntil(() -> arm.readyToShoot()))
+                    .add(new WaitUntil(() -> legacyArm.readyToShoot()))
                     .add(new WaitMS(1200))
                 .end()
                 .build();
 
         activateIdleMode = new InstantBehavior(() -> {
-            arm.startIdleMode();
+            legacyArm.startIdleMode();
         }, "Activate idle mode");
 
         park = GroupBuilder.create()
@@ -78,13 +78,13 @@ public class LegacyAutonomous extends OpMode {
                     .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
                         .add(new WaitMS(2500))
                         .add(new UpdatingBehavior(() -> {
-                            chassis.drive(0.25, -0.5, 0);
+                            chassis.directDrive(0.25, -0.5, 0);
                         }))
                     .end()
                     .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
                         .add(new WaitMS(2000))
                         .add(new UpdatingBehavior(() -> {
-                            chassis.drive(0.5, 0, 0);
+                            chassis.directDrive(0.5, 0, 0);
                         }))
                     .end()
                     .add(new InstantBehavior(() -> chassis.stopMotors()))
@@ -104,7 +104,7 @@ public class LegacyAutonomous extends OpMode {
                     .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
                         .add(new WaitMS(475))
                         .add(new UpdatingBehavior(() -> {
-                            chassis.drive(1, 0, 0);
+                            chassis.directDrive(1, 0, 0);
                         }))
                     .end()
                     .add(new InstantBehavior(() -> chassis.stopMotors()))
@@ -112,7 +112,7 @@ public class LegacyAutonomous extends OpMode {
                     .parallel(ParallelGroup.CompletionCondition.FIRST_IN_LIST)
                         .add(new WaitMS(1150))
                         .add(new UpdatingBehavior(() -> {
-                            chassis.drive(0, 1, 0);
+                            chassis.directDrive(0, 1, 0);
                         }))
                     .end()
                     .add(new InstantBehavior(() -> chassis.stopMotors()))
@@ -160,12 +160,12 @@ public class LegacyAutonomous extends OpMode {
 
     public void start() {
         imu.resetYaw();
-        arm.startCollectingMode();
+        legacyArm.startCollectingMode();
         limelight.lookForBestAimingPipeline();
 
         if (startingPosition == StartingPosition.FACING_TIPPED_HIVE) {
             mainStateMachine.setInitialState(forwardASmidgeState);
-            arm.startIdleMode();
+            legacyArm.startIdleMode();
         } else {
             mainStateMachine.setInitialState(shootAndParkState);
         }
@@ -175,7 +175,7 @@ public class LegacyAutonomous extends OpMode {
     public void loop() {
         limelight.updateData(); // This line is vital, and should be called first in the loop
         mainStateMachine.update();
-        arm.update();
+        legacyArm.update();
 
         handleTelemetry();
     }

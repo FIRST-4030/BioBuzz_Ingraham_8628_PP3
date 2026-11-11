@@ -5,8 +5,6 @@ import static com.pedropathing.ivy.Scheduler.schedule;
 import com.pedropathing.ivy.Scheduler;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.generalUtilities.Blackboard;
-
 public abstract class RobotOpMode extends OpMode {
     protected Robot robot;
 
@@ -17,7 +15,9 @@ public abstract class RobotOpMode extends OpMode {
 
         schedule(
                 robot.limelight.periodic(),
-                robot.arm.periodic()
+                robot.armHinge.periodic(),
+                robot.flipper.periodic(),
+                robot.shooter.periodic()
         );
     }
 

@@ -5,8 +5,8 @@ import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.generalUtilities.Blackboard;
-import org.firstinspires.ftc.teamcode.Hardware.Arm;
 import org.firstinspires.ftc.teamcode.Hardware.Chassis;
+import org.firstinspires.ftc.teamcode.Hardware.LegacyArm;
 import org.firstinspires.ftc.teamcode.Hardware.ControlHub;
 import org.firstinspires.ftc.teamcode.Hardware.Limelight;
 
@@ -20,7 +20,7 @@ public class LegacyTeleOp extends OpMode {
     IMU imu;
     Limelight limelight;
     Chassis chassis;
-    Arm arm;
+    LegacyArm legacyArm;
 
     ElapsedTime flowerQueueTimer = new ElapsedTime();
     boolean flowerQueued = false;
@@ -33,8 +33,8 @@ public class LegacyTeleOp extends OpMode {
         imu = hardwareMap.get(IMU.class, "imu");
         limelight = new Limelight(hardwareMap);
         chassis = new Chassis(hardwareMap);
-        arm = new Arm(hardwareMap, limelight);
-        arm.closeGate();
+        legacyArm = new LegacyArm(hardwareMap, limelight);
+        legacyArm.closeGate();
 
         imu.resetYaw();
     }
@@ -46,7 +46,7 @@ public class LegacyTeleOp extends OpMode {
     }
 
     public void start() {
-        arm.startIdleMode();
+        legacyArm.startIdleMode();
         limelight.lookForBestAimingPipeline();
     }
 
@@ -55,19 +55,19 @@ public class LegacyTeleOp extends OpMode {
         handleModeSwitchingControls();
         handleFlowerControls();
 
-        switch (arm.getArmMode()) {
+        switch (legacyArm.getArmMode()) {
             case IDLE:
             case COLLECTING:
 //                limelight.lookForBestCollectingPipeline();
                 limelight.lookForBestAimingPipeline(); // TODO: Better default?
-                chassis.drive(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
+                chassis.directDrive(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
                 break;
             case AIMING:
                 limelight.lookForBestAimingPipeline();
                 if (limelight.resultHasGoodTargets()) {
                     chassis.lockedOnDrive(-gamepad1.left_stick_y, gamepad1.left_stick_x, limelight);
                 } else {
-                    chassis.drive(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
+                    chassis.directDrive(-gamepad1.left_stick_y, gamepad1.left_stick_x, gamepad1.right_stick_x);
                 }
                 break;
             default:
@@ -76,21 +76,21 @@ public class LegacyTeleOp extends OpMode {
         }
 
         handleFlywheelAdjustment();
-        arm.update();
+        legacyArm.update();
         handleTelemetry();
     }
 
     public void handleModeSwitchingControls() {
         if (gamepad1.rightBumperWasPressed()) {
-            arm.startCollectingMode();
+            legacyArm.startCollectingMode();
         } else if (gamepad1.leftBumperWasPressed()) {
-            arm.startIdleMode();
+            legacyArm.startIdleMode();
         } else if (gamepad1.rightTriggerWasPressed()) {
-            arm.startAimingMode();
+            legacyArm.startAimingMode();
         }
 
         if (!flowerQueued) {
-            arm.ejectOverride = gamepad1.left_trigger > 0.5;
+            legacyArm.ejectOverride = gamepad1.left_trigger > 0.5;
         }
     }
 
@@ -98,15 +98,15 @@ public class LegacyTeleOp extends OpMode {
         if (gamepad1.startWasPressed()) {
             flowerQueueTimer.reset();
             flowerQueued = true;
-            arm.startIdleMode();
+            legacyArm.startIdleMode();
         }
 
         if (flowerQueued) {
-            arm.ejectOverride = true;
+            legacyArm.ejectOverride = true;
 
             if (flowerQueueTimer.milliseconds() > FLOWER_QUEUE_MS) {
                 flowerQueued = false;
-                arm.startIdleMode();
+                legacyArm.startIdleMode();
             }
         }
     }
@@ -119,22 +119,22 @@ public class LegacyTeleOp extends OpMode {
             telemetry.addData("Alliance", Blackboard.getAlliance());
         }
         telemetry.addLine("-------");
-        telemetry.addData("Mode", arm.getArmMode());
-        telemetry.addData("Current arm angle (degrees)", arm.armHinge.getArmAngleDegrees());
-        telemetry.addData("Target arm angle (degrees)", arm.armHinge.getClippedTargetAngleDegrees());
+        telemetry.addData("Mode", legacyArm.getArmMode());
+        telemetry.addData("Current arm angle (degrees)", legacyArm.armHinge.getArmAngleDegrees());
+        telemetry.addData("Target arm angle (degrees)", legacyArm.armHinge.getClippedTargetAngleDegrees());
 
         //telemetry.addData("Shooter Shot RPM", arm.getSHOOTER_SHOOTING_RPM());
         //telemetry.addData("Flipper Shot RPM", arm.getFLIPPER_SHOOTING_RPM());
 
         telemetry.addLine(String.format(Locale.US, "Shooter Shot target %.0f ,Current %.0f RPM",
-                arm.getShooter_shooting_rpm(),arm.shooterFlywheel.getRPM()));
-        telemetry.addData("Shooter at speed?", arm.shooterFlywheel.atSpeed());
+                legacyArm.getShooter_shooting_rpm(), legacyArm.shooterFlywheel.getRPM()));
+        telemetry.addData("Shooter at speed?", legacyArm.shooterFlywheel.atSpeed());
         telemetry.addLine(String.format(Locale.US, "Flipper Shot target %.0f ,Current %.0f RPM",
-                arm.getFlipper_shooting_rpm(),arm.flipperFlywheel.getRPM()));
-        telemetry.addData("Flipper at speed?", arm.shooterFlywheel.atSpeed());
+                legacyArm.getFlipper_shooting_rpm(), legacyArm.flipperFlywheel.getRPM()));
+        telemetry.addData("Flipper at speed?", legacyArm.shooterFlywheel.atSpeed());
 
-        telemetry.addData("At good height?", arm.hasReachedAimingHeight());
-        telemetry.addData("Ready to shoot?", arm.readyToShoot());
+        telemetry.addData("At good height?", legacyArm.hasReachedAimingHeight());
+        telemetry.addData("Ready to shoot?", legacyArm.readyToShoot());
 
         telemetry.addLine();
 
@@ -156,13 +156,13 @@ public class LegacyTeleOp extends OpMode {
 
     public void handleFlywheelAdjustment() {
         if (gamepad1.dpadUpWasPressed()) {
-            arm.setShooter_shooting_rpm(arm.getShooter_shooting_rpm()+10);
+            legacyArm.setShooter_shooting_rpm(legacyArm.getShooter_shooting_rpm()+10);
         } else if (gamepad1.dpadDownWasPressed()) {
-            arm.setShooter_shooting_rpm(arm.getShooter_shooting_rpm()-10);
+            legacyArm.setShooter_shooting_rpm(legacyArm.getShooter_shooting_rpm()-10);
         } else if (gamepad1.yWasPressed()) {
-            arm.setFlipper_shooting_rpm(arm.getFlipper_shooting_rpm()+10);
+            legacyArm.setFlipper_shooting_rpm(legacyArm.getFlipper_shooting_rpm()+10);
         } else if (gamepad1.aWasPressed()) {
-            arm.setFlipper_shooting_rpm(arm.getFlipper_shooting_rpm()-10);
+            legacyArm.setFlipper_shooting_rpm(legacyArm.getFlipper_shooting_rpm()-10);
         }
     }
 }

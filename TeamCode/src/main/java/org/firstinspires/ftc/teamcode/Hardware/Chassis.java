@@ -1,21 +1,23 @@
 package org.firstinspires.ftc.teamcode.Hardware;
 
-import static com.pedropathing.ivy.commands.Commands.infinite;
-
-import com.pedropathing.ivy.Command;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class Chassis {
-
     //    private double maxPower = 1.0;
     private double maxSpeed = 1.0;  // make this slower for outreaches
 
     public DcMotor frontLeftDrive, frontRightDrive, backLeftDrive, backRightDrive;
+
+    public enum DriveMode {
+        NORMAL,
+        PRECISE,
+        LOCKED_ON_HIVE
+    }
+
+    private DriveMode driveMode = DriveMode.NORMAL;
 
     public Chassis(HardwareMap hardwareMap) {
         frontLeftDrive = hardwareMap.get(DcMotor.class, "leftFront");
@@ -49,7 +51,7 @@ public class Chassis {
     }
 
     // Thanks to FTC16072 for sharing this code!!
-    public void drive(double forward, double right, double rotate) {
+    public void directDrive(double forward, double right, double rotate) {
         // This calculates the power needed for each wheel based on the amount of forward,
         // strafe right, and rotate
         double frontLeftPower = forward + right + rotate;
@@ -80,23 +82,28 @@ public class Chassis {
 
     public void lockedOnDrive(double forward, double right, Limelight limelight) {
         // TODO: Better PID equation for this instead of just a lerp?
-        this.drive(forward, right, limelight.getXError() * 0.03);
+        this.directDrive(forward, right, limelight.getXError() * 0.03);
     }
 
-    public void chasingDrive(double forward, double right, Gamepad gamepad, Limelight limelight) {
-        if (limelight.resultHasGoodTargets()) {
-            double weightedTargetAreaPercentage = Range.clip(limelight.getLatestResult().getTa() * 2, 0, 1);
-            this.drive(-1 + weightedTargetAreaPercentage, limelight.getXError() / 20, limelight.getXError() / 35);
+    public void drive(double forward, double right, double rotate, Limelight limelight) {
+        switch (driveMode) {
+            case NORMAL:
+                directDrive(forward, right, rotate);
+                break;
+            case PRECISE:
+                directDrive(forward * 0.25, right * 0.25, rotate * 0.25);
+                break;
+            case LOCKED_ON_HIVE:
+                if (!limelight.resultHasGoodTargets()) {
+                    directDrive(forward, right, rotate);
+                } else {
+                    lockedOnDrive(forward, right, limelight);
+                }
+                break;
+            default:
+                stopMotors();
+                break;
         }
-        this.drive(0, 0, 0);
-    }
-
-//    public void setMaxPower(double maxPower) {
-//        this.maxPower = maxPower;
-//    }
-
-    public void setMaxSpeed(double maxSpeed) {
-        this.maxSpeed = maxSpeed;
     }
 
     public void stopMotors() {
@@ -118,5 +125,21 @@ public class Chassis {
         telemetry.addData("fright", frontRightDrive.getPower());
         telemetry.addData("lback", backLeftDrive.getPower());
         telemetry.addData("lRIGHT", backRightDrive.getPower());
+    }
+
+    public DriveMode getDriveMode() {
+        return driveMode;
+    }
+
+    public void normalDrive() {
+        driveMode = DriveMode.NORMAL;
+    }
+
+    public void preciseDrive() {
+        driveMode = DriveMode.PRECISE;
+    }
+
+    public void lockedOnDrive() {
+        driveMode = DriveMode.LOCKED_ON_HIVE;
     }
 }

@@ -5,8 +5,8 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.IMU;
 
 import org.firstinspires.ftc.generalUtilities.Blackboard;
-import org.firstinspires.ftc.teamcode.Hardware.Arm;
 import org.firstinspires.ftc.teamcode.Hardware.Chassis;
+import org.firstinspires.ftc.teamcode.Hardware.LegacyArm;
 import org.firstinspires.ftc.teamcode.Hardware.ControlHub;
 import org.firstinspires.ftc.teamcode.Hardware.Limelight;
 
@@ -19,7 +19,7 @@ public class ArmTest extends OpMode {
     IMU imu;
     Limelight limelight;
     Chassis chassis;
-    Arm arm;
+    LegacyArm legacyArm;
 
     double targetAngle = 100;
 
@@ -30,8 +30,8 @@ public class ArmTest extends OpMode {
         imu = hardwareMap.get(IMU.class, "imu");
         limelight = new Limelight(hardwareMap);
         chassis = new Chassis(hardwareMap);
-        arm = new Arm(hardwareMap, limelight);
-        arm.closeGate();
+        legacyArm = new LegacyArm(hardwareMap, limelight);
+        legacyArm.closeGate();
 
         imu.resetYaw();
     }
@@ -43,15 +43,15 @@ public class ArmTest extends OpMode {
     }
 
     public void start() {
-        arm.startIdleMode();
+        legacyArm.startIdleMode();
         limelight.lookForBestAimingPipeline();
     }
 
     public void loop() {
         limelight.updateData(); // This line is vital, and should be called first in the loop
 
-        arm.armHinge.setTargetAngleDegrees(targetAngle);
-        arm.armHinge.driveArmToTargetAngle();
+        legacyArm.armHinge.setTargetAngleDegrees(targetAngle);
+        legacyArm.armHinge.driveArmToTargetAngle();
 
 //        if (gamepad1.dpadUpWasPressed()) {
 //            targetAngle += 5;
@@ -61,13 +61,13 @@ public class ArmTest extends OpMode {
         targetAngle = gamepad1.left_stick_y * 60 + 90;
 
         if (gamepad1.aWasPressed()) {
-            arm.armHinge.kP -= 0.01;
+            legacyArm.armHinge.kP -= 0.01;
         } else if (gamepad1.yWasPressed()) {
-            arm.armHinge.kP += 0.01;
+            legacyArm.armHinge.kP += 0.01;
         } else if (gamepad1.xWasPressed()) {
-            arm.armHinge.kG -= 0.01;
+            legacyArm.armHinge.kG -= 0.01;
         } else if (gamepad1.bWasPressed()) {
-            arm.armHinge.kG += 0.01;
+            legacyArm.armHinge.kG += 0.01;
         }
 
 
@@ -75,16 +75,16 @@ public class ArmTest extends OpMode {
     }
 
     public void handleTelemetry() {
-        telemetry.addData("Current arm angle (50°-135° range)", arm.armHinge.getArmAngleDegrees());
+        telemetry.addData("Current arm angle (50°-135° range)", legacyArm.armHinge.getArmAngleDegrees());
         telemetry.addData("Target angle", targetAngle);
         telemetry.addLine("  [DPAD-UP = higher, DPAD-DOWN = lower]");
 
         telemetry.addLine();
-        telemetry.addData("kP", arm.armHinge.kP);
+        telemetry.addData("kP", legacyArm.armHinge.kP);
         telemetry.addLine("[A = -0.01, Y = +0.01]");
 
         telemetry.addLine();
-        telemetry.addData("kG", arm.armHinge.kG);
+        telemetry.addData("kG", legacyArm.armHinge.kG);
         telemetry.addLine("[X = -0.01, B = +0.01]");
 
         telemetry.update();

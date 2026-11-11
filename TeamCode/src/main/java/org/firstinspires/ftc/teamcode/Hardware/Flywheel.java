@@ -66,6 +66,10 @@ public class Flywheel {
         this.targetRPM = velocity;
     }
 
+    public double getTargetRPM() {
+        return this.targetRPM;
+    }
+
     public double getTicks() {
         return motor.getCurrentPosition();
     }

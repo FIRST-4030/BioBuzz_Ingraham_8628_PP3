@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-public class Arm {
+public class LegacyArm {
 
     public ArmHinge armHinge;
     public Flywheel shooterFlywheel;
@@ -17,7 +17,6 @@ public class Arm {
     Limelight limelight;
 
     private boolean reachedAimingHeight = false;
-    private final ElapsedTime timeSinceReachedReadyToShoot = new ElapsedTime();
 
     public enum ArmMode {
         IDLE,
@@ -62,8 +61,8 @@ public class Arm {
         return flipper_shooting_rpm;
     }
 
-    public Arm(HardwareMap hardwareMap, Limelight limelight) {
-        armHinge = new ArmHinge(hardwareMap);
+    public LegacyArm(HardwareMap hardwareMap, Limelight limelight) {
+        armHinge = new ArmHinge(hardwareMap, limelight);
 
         // Both are using default controller values for now, but can be later changed with
         // MotorVelocityController.setControllerValues()
@@ -244,13 +243,13 @@ public class Arm {
         }
     }
 
-    public void closeGate() { gateServo.setPosition(
-            SERVO_CLOSED_POSITION
-    ); }
+    public void closeGate() {
+        gateServo.setPosition(SERVO_CLOSED_POSITION);
+    }
 
-    public void openGate() { gateServo.setPosition(
-            SERVO_OPEN_POSITION
-    ); }
+    public void openGate() {
+        gateServo.setPosition(SERVO_OPEN_POSITION);
+    }
 
     public boolean readyToShoot() {
         return (armMode == ArmMode.AIMING &&

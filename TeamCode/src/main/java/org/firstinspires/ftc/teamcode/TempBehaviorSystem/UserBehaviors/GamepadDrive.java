@@ -3,8 +3,8 @@ package org.firstinspires.ftc.teamcode.TempBehaviorSystem.UserBehaviors;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.TempBehaviorSystem.Behavior;
 import org.firstinspires.ftc.teamcode.Hardware.Chassis;
+import org.firstinspires.ftc.teamcode.TempBehaviorSystem.Behavior;
 
 /**
  * Behavior for robot-centric driving using a gamepad. Never completes.
@@ -49,7 +49,7 @@ public class GamepadDrive implements Behavior {
      */
     @Override
     public void update() {
-        chassis.drive(-gamepad.left_stick_y, gamepad.left_stick_x, gamepad.right_stick_x);
+        chassis.directDrive(-gamepad.left_stick_y, gamepad.left_stick_x, gamepad.right_stick_x);
     }
 
     /**
