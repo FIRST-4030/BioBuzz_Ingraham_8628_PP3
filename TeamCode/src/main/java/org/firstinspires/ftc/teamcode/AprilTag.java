@@ -58,7 +58,7 @@ import java.util.List;
  * scanField -- Scans field for April Tags, sets boolean for visible side (red/blue) and obelisk orientation
  * setGoalTagId -- Manually sets the goal April Tag id
  */
-
+@Deprecated
 public class AprilTag {
 
     private static final boolean USE_WEBCAM = true;  // true = webcam, false = phone
@@ -114,44 +114,44 @@ public class AprilTag {
 
         if(!currentDetections.isEmpty()) {
             for (AprilTagDetection detection : currentDetections) {
-                if (detection.metadata != null) {
-                    if (detection.id == 20){
-                        blueSide = true;
-                        redSide = false;
-                        goalBearingBlue = detection.ftcPose.bearing;
-                        distanceToGoal = detection.ftcPose.range;
-                        goalTagId = detection.id;
-                    }
-                    if (detection.id == 24){
-                        blueSide = false;
-                        redSide = true;
-                        goalBearingRed = detection.ftcPose.bearing;
-                        distanceToGoal = detection.ftcPose.range;
-                        goalTagId = detection.id;
-                    }
-                    if (detection.id == 22){ //PGP
-                        PPG = false;
-                        GPP = false;
-                        PGP = true;
-                        obeliskRange = detection.ftcPose.range;
-                        obeliskBearing = detection.ftcPose.bearing;
-                    }
-                    else if (detection.id == 23){ //PPG
-                        PPG = true;
-                        GPP = false;
-                        PGP = false;
-                        obeliskRange = detection.ftcPose.range;
-                        obeliskBearing = detection.ftcPose.bearing;
-                    }
-                    else if (detection.id == 21){ //GPP
-                        PPG = false;
-                        GPP = true;
-                        PGP = false;
-                        obeliskRange = detection.ftcPose.range;
-                        obeliskBearing = detection.ftcPose.bearing;
-                    }
+//                if (detection.metadata != null) {
+//                    if (detection.id == 20){
+//                        blueSide = true;
+//                        redSide = false;
+//                        goalBearingBlue = detection.ftcPose.bearing;
+//                        distanceToGoal = detection.ftcPose.range;
+//                        goalTagId = detection.id;
+//                    }
+//                    if (detection.id == 24){
+//                        blueSide = false;
+//                        redSide = true;
+//                        goalBearingRed = detection.ftcPose.bearing;
+//                        distanceToGoal = detection.ftcPose.range;
+//                        goalTagId = detection.id;
+//                    }
+//                    if (detection.id == 22){ //PGP
+//                        PPG = false;
+//                        GPP = false;
+//                        PGP = true;
+//                        obeliskRange = detection.ftcPose.range;
+//                        obeliskBearing = detection.ftcPose.bearing;
+//                    }
+//                    else if (detection.id == 23){ //PPG
+//                        PPG = true;
+//                        GPP = false;
+//                        PGP = false;
+//                        obeliskRange = detection.ftcPose.range;
+//                        obeliskBearing = detection.ftcPose.bearing;
+//                    }
+//                    else if (detection.id == 21){ //GPP
+//                        PPG = false;
+//                        GPP = true;
+//                        PGP = false;
+//                        obeliskRange = detection.ftcPose.range;
+//                        obeliskBearing = detection.ftcPose.bearing;
+//                    }
 
-                 }
+                 //}
             }
 
             telemetry.addLine(String.format("# AprilTags Detected: %d\n", currentDetections.size()));
@@ -249,26 +249,26 @@ public class AprilTag {
 
         if(!currentDetections.isEmpty()) {
             for (AprilTagDetection detection : currentDetections) {
-                if (detection.metadata != null) {
-                    if (detection.id == goalTagId) {
-                        targetInView = true;
-                        distanceToGoal = detection.ftcPose.y;
-                        bearing = detection.ftcPose.bearing;
-                        yaw = detection.ftcPose.yaw;
-                        if (display) {
-                            telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
-                            telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.z));
-                            telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detection.ftcPose.pitch, detection.ftcPose.roll, detection.ftcPose.yaw));
-                            telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
-                        }
-                    } else {
-                        targetInView = false;
-                        if (display) {
-                            telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
-                            telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));
-                        }
-                    }
-                }
+//                if (detection.metadata != null) {
+//                    if (detection.id == goalTagId) {
+//                        targetInView = true;
+//                        distanceToGoal = detection.ftcPose.y;
+//                        bearing = detection.ftcPose.bearing;
+//                        yaw = detection.ftcPose.yaw;
+//                        if (display) {
+//                            telemetry.addLine(String.format("\n==== (ID %d) %s", detection.id, detection.metadata.name));
+//                            telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f  (inch)", detection.ftcPose.x, detection.ftcPose.y, detection.ftcPose.z));
+//                            telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f  (deg)", detection.ftcPose.pitch, detection.ftcPose.roll, detection.ftcPose.yaw));
+//                            telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f  (inch, deg, deg)", detection.ftcPose.range, detection.ftcPose.bearing, detection.ftcPose.elevation));
+//                        }
+//                    } else {
+//                        targetInView = false;
+//                        if (display) {
+//                            telemetry.addLine(String.format("\n==== (ID %d) Unknown", detection.id));
+//                            telemetry.addLine(String.format("Center %6.0f %6.0f   (pixels)", detection.center.x, detection.center.y));
+//                        }
+//                    }
+//                }
                 if (display) { telemetry.update(); }
             }
         }
