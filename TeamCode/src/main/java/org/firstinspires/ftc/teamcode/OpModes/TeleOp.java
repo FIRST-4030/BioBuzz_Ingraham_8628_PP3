@@ -9,8 +9,11 @@ import static com.pedropathing.ivy.groups.Groups.sequential;
 import com.pedropathing.api.Paths;
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.ivy.Command;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 
 import org.firstinspires.ftc.generalUtilities.Blackboard;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Robot.RobotOpMode;
 import org.firstinspires.ftc.teamcode.pedro.Poses;
 
@@ -19,9 +22,13 @@ import java.util.Locale;
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="TeleOp")
 public class TeleOp extends RobotOpMode {
 
+    GoBildaPinpointDriver pinpoint;
+
     @Override
     public void init() {
         super.init();
+
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
     }
 
     @Override
@@ -67,6 +74,10 @@ public class TeleOp extends RobotOpMode {
         } else {
             robot.telemetry.addData("Alliance", Blackboard.getAlliance());
         }
+
+        robot.telemetry.addData("Pinpoint x", pinpoint.getPosX(DistanceUnit.INCH));
+        robot.telemetry.addData("Pinpoint y", pinpoint.getPosY(DistanceUnit.INCH));
+        robot.telemetry.addData("Pinpoint heading", pinpoint.getHeading(AngleUnit.DEGREES));
 
         robot.telemetry.addLine("-------");
         robot.telemetry.addData("Follower x", robot.chassis.follower.pose().x());
