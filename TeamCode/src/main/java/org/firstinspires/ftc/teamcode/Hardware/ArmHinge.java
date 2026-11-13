@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.Hardware;
 
 import static com.pedropathing.ivy.commands.Commands.infinite;
+import static com.pedropathing.ivy.commands.Commands.instant;
 
 import com.pedropathing.ivy.Command;
 import com.qualcomm.robotcore.hardware.AnalogInput;
@@ -10,20 +11,22 @@ import com.qualcomm.robotcore.util.Range;
 
 public class ArmHinge {
 
-    private DcMotor motor;
-    private AnalogInput armPotentiometer;
-    private Limelight limelight;
-
-    public static final double MIN_ANGLE_DEG = 55.0;
-    public static final double MAX_ANGLE_DEG = 125.0;  // TODO: Check angle at 29" arm height
+    private final DcMotor motor;
+    private final AnalogInput armPotentiometer;
+    private final Limelight limelight;
 
     // 90 degrees is defined as parallel to the ground.
+    public static final double MIN_ANGLE_DEG = 55.0;
+    public static final double MAX_ANGLE_DEG = 125.0;  // TODO: Check angle at 29" arm height again
+
     public static final double COLLECTING_ARM_ANGLE_DEG = 50.0;
     public static final double AIMING_ARM_ANGLE_DEG = 118.0;
     public static final double FLOWER_ARM_ANGLE_DEG = 125.0;
 
-    public double kP = 0.04;
-    public double kG = 0.28;
+    public static final double ANGLE_TOLERANCE = 4;
+
+    private static final double kP = 0.04;
+    private static final double kG = 0.28;
 
     private double targetAngle = MIN_ANGLE_DEG;
     private boolean lookingForHive = false;
@@ -111,6 +114,15 @@ public class ArmHinge {
 
     public void setTargetAngleDegrees(double targetAngle) {
         this.targetAngle = targetAngle;
+    }
+
+    public double getErrorDegrees() {
+        double clippedGoalArmAngleDegrees = Range.clip(targetAngle, MIN_ANGLE_DEG, MAX_ANGLE_DEG);
+        return clippedGoalArmAngleDegrees - getArmAngleDegrees();
+    }
+
+    public boolean isAtTargetAngle() {
+        return Math.abs(getErrorDegrees()) < ANGLE_TOLERANCE;
     }
 
     public boolean isPotentiometerConnected() {

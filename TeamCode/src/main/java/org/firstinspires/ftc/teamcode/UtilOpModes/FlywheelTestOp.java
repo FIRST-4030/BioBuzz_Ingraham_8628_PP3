@@ -35,7 +35,7 @@ public class FlywheelTestOp extends OpMode {
 
         imu = hardwareMap.get(IMU.class, "imu");
         limelight = new Limelight(hardwareMap);
-        chassis = new Chassis(hardwareMap);
+        chassis = new Chassis(hardwareMap, controlHub);
         shooterFlywheel = new Flywheel(hardwareMap, "shooter", DcMotorSimple.Direction.REVERSE);
     }
 

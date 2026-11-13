@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.Robot;
 import static com.pedropathing.ivy.Scheduler.schedule;
 
 import com.pedropathing.ivy.Scheduler;
+import com.pedropathing.math.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 public abstract class RobotOpMode extends OpMode {
@@ -15,10 +16,13 @@ public abstract class RobotOpMode extends OpMode {
 
         schedule(
                 robot.limelight.periodic(),
+                robot.chassis.periodic(),
                 robot.armHinge.periodic(),
                 robot.flipper.periodic(),
                 robot.shooter.periodic()
         );
+
+        robot.chassis.follower.setPose(new Pose(0, 0, 0));
     }
 
     @Override

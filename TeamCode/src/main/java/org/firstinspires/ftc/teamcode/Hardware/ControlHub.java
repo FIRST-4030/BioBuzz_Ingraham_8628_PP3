@@ -127,7 +127,7 @@ public class ControlHub {
         }
     }
 
-    public Follower getRobotSpecificPedroConstants() {
+    public Follower createRobotSpecificFollower() {
         switch (getBotIdentification()) {
             case BIOBUZZ_COMPETITION:
                 return ConstantsBioBuzzCompetitionBot.create(hardwareMap);

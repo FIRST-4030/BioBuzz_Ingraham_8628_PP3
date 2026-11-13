@@ -4,11 +4,10 @@ import com.pedropathing.api.PoseFactory;
 import com.pedropathing.math.Pose;
 
 public class Poses {
-    private final double FORWARD = 90;
+    private static final double FORWARD = 0;
 
-    private final PoseFactory p = PoseFactory.degrees();
-    public Poses(){};
+    private static final PoseFactory p = PoseFactory.degrees();
 
-    public final Pose coolPose = p.of(0, 0, FORWARD);
-    public final Pose amazingPose = p.of(12, 0, FORWARD + 90);
+    public static final Pose coolPose = p.of(0, 0, FORWARD);
+    public static final Pose amazingPose = p.of(5, 0, FORWARD);
 }

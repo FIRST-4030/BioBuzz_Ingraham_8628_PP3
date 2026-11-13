@@ -39,8 +39,8 @@ public class ConstantsBioBuzzCompetitionBot {
     public static PinpointConfig localizerConfig = new PinpointConfig(c -> {
         c.name.set("pinpoint");
         c.podType.set(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        c.xPodOffset.set(3.6889525285855993);
-        c.yPodOffset.set(-3.7016098142608884);
+        c.xPodOffset.set(3.8);
+        c.yPodOffset.set(-3.9);
         c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
         c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
         c.globalDistanceUnit.set(DistanceUnit.INCH);
