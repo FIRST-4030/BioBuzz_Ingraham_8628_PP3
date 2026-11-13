@@ -22,8 +22,6 @@ import java.util.function.Supplier;
 import static com.pedropathing.api.Paths.curve;
 import static com.pedropathing.api.Paths.line;
 
-import android.annotation.SuppressLint;
-
 public class Tests extends Procedure {
     enum Test {
         @DisplayName("Hold Test")
@@ -74,7 +72,7 @@ public class Tests extends Procedure {
 
         Inputs inputs = inputs("Select", "Select");
         Inputs.Field<Test> selectedTest = inputs.e("Test", Test.class).withDefault(Test.LINE);
-        Inputs.Field<Double> distance = inputs.d("Distance").withDefault(24.0);
+        Inputs.Field<Double> distance = inputs.d("Distance").withDefault(48.0);
 
         awaitInputs(inputs);
 
@@ -170,7 +168,6 @@ class TestsLine extends TuningOpMode<Boolean> {
         Follower follower = followerFunction.apply(hardwareMap);
         follower.setPose(Pose.zero());
 
-        double distance = this.distance;
         boolean forward = true;
 
         Path path1 = line(Pose.zero(), new Pose(distance,0, 0)).constant(0);
@@ -212,7 +209,6 @@ class TestsCurve extends TuningOpMode<Boolean> {
         Follower follower = followerFunction.apply(hardwareMap);
         follower.setPose(Pose.zero());
 
-        double distance = this.distance;
         boolean forward = true;
 
         Path path1 = curve(Pose.zero(), new Pose(distance + 0,0), new Pose(distance,distance)).tangent();
@@ -254,7 +250,6 @@ class TestsInterpolation extends TuningOpMode<Boolean> {
         Follower follower = followerFunction.apply(hardwareMap);
         follower.setPose(Pose.zero());
 
-        double distance = this.distance;
         boolean forward = true;
 
         Path path1 = curve(Pose.zero(), new Pose(distance + 0,0), new Pose(distance,distance)).heading((curve, t) -> Math.PI);
@@ -291,7 +286,6 @@ class TestsLocalization extends TuningOpMode<Boolean> {
         this.localizerFunction = localizerFunction;
     }
 
-    @SuppressLint("DefaultLocale")
     @Override
     public Boolean runTuningOpMode() throws InterruptedException {
         Localizer localizer = localizerFunction.apply(hardwareMap);
@@ -306,8 +300,7 @@ class TestsLocalization extends TuningOpMode<Boolean> {
         while (opModeIsActive()) {
             drivetrain.drive(new DrivePowers(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x), true);
             localizer.update();
-            telemetry.addLine(String.format("X: %7.3f, Y: %7.3f, Heading: %7.3f",
-                    localizer.pose().x(),localizer.pose().y(),Math.toDegrees(localizer.pose().heading())));
+            telemetry.addData("Pose", localizer.pose());
             telemetry.update();
         }
         return true;
@@ -470,7 +463,6 @@ class TestsPose extends TuningOpMode<Boolean> {
         this.localizerFunction = localizerFunction;
     }
 
-    @SuppressLint("DefaultLocale")
     @Override
     public Boolean runTuningOpMode() throws InterruptedException {
         Localizer localizer = localizerFunction.apply(hardwareMap);
@@ -480,10 +472,11 @@ class TestsPose extends TuningOpMode<Boolean> {
         localizer.update();
         while (opModeIsActive()) {
             localizer.update();
-            telemetry.addLine(String.format("X: %7.3f, Y: %7.3f, Heading: %7.3f",
-                    localizer.pose().x(),localizer.pose().y(),Math.toDegrees(localizer.pose().heading())));
+            telemetry.addData("Pose", localizer.pose());
             telemetry.update();
         }
         return true;
     }
 }
+
+
