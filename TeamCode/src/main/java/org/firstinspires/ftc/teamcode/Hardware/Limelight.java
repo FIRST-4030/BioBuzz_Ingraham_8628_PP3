@@ -17,7 +17,7 @@ import java.util.List;
 
 public class Limelight {
 
-    public Limelight3A limelight;
+    public Limelight3A limelight3A;
     // Use internal results and status so we can update the data once each loop and use those
     // same results throughout the loop.
     // Be careful: changing values on the limelight won't result in a readable change until
@@ -37,6 +37,7 @@ public class Limelight {
     public static final int RED_HIVE_PIPELINE = 0;
     public static final int BLUE_HIVE_PIPELINE = 1;
     public static final int POLLEN_PIPELINE = 6;
+    public static final int ALL_HIVES_PIPELINE = 7; // TODO: Make this!!!!!!!!!!!!!!
 
     // Thresholds for aiming
     private static final double X_ERROR_THRESHOLD = 5;
@@ -48,14 +49,14 @@ public class Limelight {
     private final ElapsedTime timeSinceLastPipelineSwitch = new ElapsedTime();
 
     public Limelight(HardwareMap hardwareMap) {
-        limelight = hardwareMap.get(Limelight3A.class, "limelight");
-        limelight.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
-        limelight.start(); // This tells Limelight to start looking!
+        limelight3A = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight3A.setPollRateHz(100); // This sets how often we ask Limelight for data (100 times per second)
+        limelight3A.start(); // This tells Limelight to start looking!
     }
 
     public void updateData() {
-        internalLatestResult = limelight.getLatestResult();
-        internalLatestStatus = limelight.getStatus();
+        internalLatestResult = limelight3A.getLatestResult();
+        internalLatestStatus = limelight3A.getStatus();
     }
 
     public HiveCell getHiveCellFromTagID(int tagID) {
@@ -117,11 +118,11 @@ public class Limelight {
         return lastRequestedPipeline == getCurrentPipelineID();
     }
 
-    public void lookForBestCollectingPipeline() {
+    public void switchToPollenCollectingPipeline() {
         setPipeline(POLLEN_PIPELINE);
     }
 
-    public void lookForBestAimingPipeline() {
+    public void switchToAllianceHivePipeline() {
         switch (Blackboard.getAlliance()) {
             case RED:
                 setPipeline(RED_HIVE_PIPELINE);
@@ -129,7 +130,13 @@ public class Limelight {
             case BLUE:
                 setPipeline(BLUE_HIVE_PIPELINE);
                 break;
+            default:
+                setPipeline(ALL_HIVES_PIPELINE);
         }
+    }
+
+    public void switchToAllHivesPipeline() {
+        setPipeline(ALL_HIVES_PIPELINE);
     }
 
     public boolean canSeeHiveCell(HiveCell hiveCell) {
@@ -213,7 +220,7 @@ public class Limelight {
 
         if (getCurrentPipelineID() == pipelineID) return;
 
-        limelight.pipelineSwitch(pipelineID);
+        limelight3A.pipelineSwitch(pipelineID);
     }
 
     public ElapsedTime getTimeSinceLastPipelineSwitch() {

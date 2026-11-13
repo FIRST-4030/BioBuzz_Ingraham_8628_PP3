@@ -1,13 +1,10 @@
 package org.firstinspires.ftc.teamcode.OpModes;
 
-import static com.pedropathing.ivy.Scheduler.schedule;
 import static com.pedropathing.ivy.commands.Commands.infinite;
 import static com.pedropathing.ivy.commands.Commands.instant;
 import static com.pedropathing.ivy.commands.Commands.waitUntil;
 import static com.pedropathing.ivy.groups.Groups.sequential;
 
-import com.pedropathing.api.Paths;
-import com.pedropathing.api.PoseFactory;
 import com.pedropathing.ivy.Command;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 
@@ -40,6 +37,7 @@ public class TeleOp extends RobotOpMode {
 
     @Override
     public void start() {
+        robot.chassis.follower.setPose(Poses.farFromParkStart);
         lowerArmAndStopCollecting().schedule();
     }
 
@@ -58,9 +56,7 @@ public class TeleOp extends RobotOpMode {
         if (gamepad1.dpadUpWasPressed()) setUpForFlower().schedule();
 
         if (gamepad1.dpadDownWasPressed()) {
-            robot.chassis.followPath(
-                    Paths.line(Poses.amazingPose, Poses.coolPose).linear(Poses.amazingPose, Poses.coolPose)
-            ).proxy().requiring(robot.chassis).schedule();
+            robot.chassis.holdCurrentPose().proxy().requiring(robot.chassis).schedule();
         }
 
         handleTelemetry();
@@ -164,7 +160,7 @@ public class TeleOp extends RobotOpMode {
             robot.shooter.doShootRPM();
             robot.flipper.stop();
             robot.gate.close();
-            robot.limelight.lookForBestAimingPipeline();
+            robot.limelight.switchToAllianceHivePipeline();
         }).requiring(robot.chassis, robot.armHinge, robot.shooter, robot.flipper, robot.gate);
     }
 

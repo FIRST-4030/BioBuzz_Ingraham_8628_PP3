@@ -46,7 +46,7 @@ public class FlywheelTestOp extends OpMode {
     }
 
     public void start() {
-        limelight.lookForBestAimingPipeline();
+        limelight.switchToAllianceHivePipeline();
         shooterFlywheel.stop();
     }
 

@@ -21,8 +21,6 @@ public abstract class RobotOpMode extends OpMode {
                 robot.flipper.periodic(),
                 robot.shooter.periodic()
         );
-
-        robot.chassis.follower.setPose(new Pose(0, 0, 0));
     }
 
     @Override

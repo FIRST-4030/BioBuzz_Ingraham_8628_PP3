@@ -35,19 +35,19 @@ public class UprightHiveAuto extends RobotOpMode {
 
     @Override
     public void start() {
-        schedule(
-                sequential(
-                        Groups.loop(
-                                sequential(
-                                        robot.chassis.followPath(line(Poses.coolPose, Poses.amazingPose).linear(Poses.coolPose, Poses.amazingPose)),
-                                        shoot(),
-                                        lowerArmAndStopCollecting(),
-                                        robot.chassis.followPath(line(Poses.amazingPose, Poses.coolPose).linear(Poses.amazingPose, Poses.coolPose))
-                                )
-                        ).until(() -> getRuntime() >= 25.0),
-                        lowerArmAndStopCollecting()
-                )
-        );
+        robot.chassis.follower.setPose(Poses.farFromParkStart);
+
+        sequential(
+                goToHiveFarFromPark(),
+                shoot(),
+                collectGarden(),
+                Groups.loop(
+                        sequential(
+
+                        )
+                ).until(() -> getRuntime() >= 25.0),
+                lowerArmAndStopCollecting()
+        ).schedule();
     }
 
     @Override
@@ -92,6 +92,24 @@ public class UprightHiveAuto extends RobotOpMode {
 
     Command shoot() {
         return deadline(waitMs(2000), infiniteAimAndShoot());
+    }
+
+    Command goToHiveFarFromPark() {
+        return robot.chassis.followPath(
+                line(Poses.farFromParkStart, Poses.hiveFarFromPark)
+                        .linear(Poses.farFromParkStart, Poses.hiveFarFromPark));
+    }
+
+    Command collectGarden() {
+        return sequential(
+                lowerArmAndStopCollecting(),
+                robot.chassis.followPath(
+                        line(Poses.hiveFarFromPark, Poses.gardenSetup)
+                                .linear(Poses.hiveFarFromPark, Poses.gardenSetup)),
+                robot.chassis.followPath(
+                        line(Poses.gardenSetup, Poses.gardenCollect)
+                                .linear(Poses.gardenSetup, Poses.gardenCollect))
+        );
     }
 
     Command lowerArmAndCollect() {
@@ -148,7 +166,7 @@ public class UprightHiveAuto extends RobotOpMode {
             robot.shooter.doShootRPM();
             robot.flipper.stop();
             robot.gate.close();
-            robot.limelight.lookForBestAimingPipeline();
+            robot.limelight.switchToAllianceHivePipeline();
         }).requiring(robot.chassis, robot.armHinge, robot.shooter, robot.flipper, robot.gate);
     }
 
