@@ -11,6 +11,7 @@ import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import org.firstinspires.ftc.generalUtilities.Blackboard;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.Hardware.Limelight;
 import org.firstinspires.ftc.teamcode.Robot.RobotOpMode;
 import org.firstinspires.ftc.teamcode.pedro.Poses;
 
@@ -71,9 +72,10 @@ public class TeleOp extends RobotOpMode {
             robot.telemetry.addData("Alliance", Blackboard.getAlliance());
         }
 
-        robot.telemetry.addData("Pinpoint x", pinpoint.getPosX(DistanceUnit.INCH));
-        robot.telemetry.addData("Pinpoint y", pinpoint.getPosY(DistanceUnit.INCH));
-        robot.telemetry.addData("Pinpoint heading", pinpoint.getHeading(AngleUnit.DEGREES));
+        robot.telemetry.addData("Can see red audience", robot.limelight.canSeeHiveCell(Limelight.HiveCell.RED_AUDIENCE));
+        robot.telemetry.addData("Can see blue audience", robot.limelight.canSeeHiveCell(Limelight.HiveCell.BLUE_AUDIENCE));
+        robot.telemetry.addData("Can see red scoring", robot.limelight.canSeeHiveCell(Limelight.HiveCell.RED_SCORING));
+        robot.telemetry.addData("Can see blue scoring", robot.limelight.canSeeHiveCell(Limelight.HiveCell.BLUE_SCORING));
 
         robot.telemetry.addLine("-------");
         robot.telemetry.addData("Follower x", robot.chassis.follower.pose().x());

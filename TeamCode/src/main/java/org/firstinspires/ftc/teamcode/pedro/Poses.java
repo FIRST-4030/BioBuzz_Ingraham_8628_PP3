@@ -21,12 +21,14 @@ public class Poses {
 
     private static final PoseFactory p = PoseFactory.degrees();
 
-    public static final Pose nearGardenStartingPose = p.of(57.75, 8.5, 90);
+    public static final Pose origin = p.of(8, 8, 90);
+
+    public static final Pose nearGardenStartingPose = p.of(56, 6, 90);
 
     public static final Pose hiveNearGarden = p.of(57.75, 22.75, 90);
     public static final Pose hiveFarFromGarden = p.of(57.75, 118.75, 270);
 
     public static final Pose controlPointToGarden = p.of(38, 27, 130);
-    public static final Pose gardenSetup = p.of(35.75, 8.5, 180);
-    public static final Pose gardenCollect = p.of(7.75, 8.5, 180);
+    public static final Pose gardenSetup = p.of(35.75, 8, 180);
+    public static final Pose gardenCollect = p.of(8, 8, 180);
 }

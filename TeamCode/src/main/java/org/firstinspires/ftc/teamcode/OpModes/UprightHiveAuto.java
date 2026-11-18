@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.OpModes;
 
 import static com.pedropathing.api.Paths.curve;
 import static com.pedropathing.api.Paths.line;
-import static com.pedropathing.ivy.commands.Commands.conditional;
 import static com.pedropathing.ivy.commands.Commands.infinite;
 import static com.pedropathing.ivy.commands.Commands.instant;
 import static com.pedropathing.ivy.commands.Commands.waitMs;
@@ -23,11 +22,11 @@ import java.util.Locale;
 public class UprightHiveAuto extends RobotOpMode {
 
     enum HiveTipState {
-        TIPPED_TOWARDS_GARDEN,
-        TIPPED_AWAY_FROM_GARDEN,
+        UPRIGHT_TOWARDS_GARDEN,
+        UPRIGHT_AWAY_FROM_GARDEN,
     }
 
-    HiveTipState hiveTipState = HiveTipState.TIPPED_TOWARDS_GARDEN;
+    HiveTipState hiveTipState = HiveTipState.UPRIGHT_TOWARDS_GARDEN;
 
     @Override
     public void init() {
@@ -56,7 +55,8 @@ public class UprightHiveAuto extends RobotOpMode {
 //                        () -> hiveTipState == HiveTipState.TIPPED_AWAY_FROM_GARDEN,
 //
 //                ),
-                lowerArmAndStopCollecting()
+                lowerArmAndStopCollecting(),
+                waitUntil(() -> false)
         ).schedule();
     }
 
@@ -75,6 +75,10 @@ public class UprightHiveAuto extends RobotOpMode {
         }
 
         robot.telemetry.addData("Hive tip state", hiveTipState);
+        robot.telemetry.addData("Can see red audience", robot.limelight.canSeeHiveCell(Limelight.HiveCell.RED_AUDIENCE));
+        robot.telemetry.addData("Can see blue audience", robot.limelight.canSeeHiveCell(Limelight.HiveCell.BLUE_AUDIENCE));
+        robot.telemetry.addData("Can see red scoring", robot.limelight.canSeeHiveCell(Limelight.HiveCell.RED_SCORING));
+        robot.telemetry.addData("Can see blue scoring", robot.limelight.canSeeHiveCell(Limelight.HiveCell.BLUE_SCORING));
         robot.telemetry.addData("x", robot.chassis.follower.pose().x());
         robot.telemetry.addData("y", robot.chassis.follower.pose().y());
 
@@ -206,10 +210,10 @@ public class UprightHiveAuto extends RobotOpMode {
         return instant(() -> {
             if (robot.limelight.canSeeHiveCell(Limelight.HiveCell.RED_AUDIENCE) ||
                     robot.limelight.canSeeHiveCell(Limelight.HiveCell.BLUE_SCORING)) {
-                hiveTipState = HiveTipState.TIPPED_TOWARDS_GARDEN;
+                hiveTipState = HiveTipState.UPRIGHT_TOWARDS_GARDEN;
             } else if (robot.limelight.canSeeHiveCell(Limelight.HiveCell.BLUE_AUDIENCE) ||
                     robot.limelight.canSeeHiveCell(Limelight.HiveCell.RED_SCORING)) {
-                hiveTipState = HiveTipState.TIPPED_AWAY_FROM_GARDEN;
+                hiveTipState = HiveTipState.UPRIGHT_AWAY_FROM_GARDEN;
             }
         });
     }
