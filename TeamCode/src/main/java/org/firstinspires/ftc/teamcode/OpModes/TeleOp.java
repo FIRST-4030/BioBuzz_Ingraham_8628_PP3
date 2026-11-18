@@ -37,7 +37,7 @@ public class TeleOp extends RobotOpMode {
 
     @Override
     public void start() {
-        robot.chassis.follower.setPose(Poses.farFromParkStart);
+        robot.chassis.follower.setPose(Poses.nearGardenStartingPose);
         lowerArmAndStopCollecting().schedule();
     }
 

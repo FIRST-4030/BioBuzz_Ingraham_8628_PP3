@@ -1,7 +1,8 @@
 package org.firstinspires.ftc.teamcode.OpModes;
 
+import static com.pedropathing.api.Paths.curve;
 import static com.pedropathing.api.Paths.line;
-import static com.pedropathing.ivy.Scheduler.schedule;
+import static com.pedropathing.ivy.commands.Commands.conditional;
 import static com.pedropathing.ivy.commands.Commands.infinite;
 import static com.pedropathing.ivy.commands.Commands.instant;
 import static com.pedropathing.ivy.commands.Commands.waitMs;
@@ -10,9 +11,9 @@ import static com.pedropathing.ivy.groups.Groups.deadline;
 import static com.pedropathing.ivy.groups.Groups.sequential;
 
 import com.pedropathing.ivy.Command;
-import com.pedropathing.ivy.groups.Groups;
 
 import org.firstinspires.ftc.generalUtilities.Blackboard;
+import org.firstinspires.ftc.teamcode.Hardware.Limelight;
 import org.firstinspires.ftc.teamcode.Robot.RobotOpMode;
 import org.firstinspires.ftc.teamcode.pedro.Poses;
 
@@ -20,6 +21,13 @@ import java.util.Locale;
 
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous(name="Auto")
 public class UprightHiveAuto extends RobotOpMode {
+
+    enum HiveTipState {
+        TIPPED_TOWARDS_GARDEN,
+        TIPPED_AWAY_FROM_GARDEN,
+    }
+
+    HiveTipState hiveTipState = HiveTipState.TIPPED_TOWARDS_GARDEN;
 
     @Override
     public void init() {
@@ -35,17 +43,19 @@ public class UprightHiveAuto extends RobotOpMode {
 
     @Override
     public void start() {
-        robot.chassis.follower.setPose(Poses.farFromParkStart);
+        robot.chassis.follower.setPose(Poses.nearGardenStartingPose);
 
         sequential(
-                goToHiveFarFromPark(),
+                goToHiveFromStart(),
                 shoot(),
                 collectGarden(),
-                Groups.loop(
-                        sequential(
-
-                        )
-                ).until(() -> getRuntime() >= 25.0),
+                raiseArmToCheckHive(),
+                goToHiveNearGarden(),
+                checkHiveTip(),
+//                conditional(
+//                        () -> hiveTipState == HiveTipState.TIPPED_AWAY_FROM_GARDEN,
+//
+//                ),
                 lowerArmAndStopCollecting()
         ).schedule();
     }
@@ -63,6 +73,10 @@ public class UprightHiveAuto extends RobotOpMode {
         } else {
             robot.telemetry.addData("Alliance", Blackboard.getAlliance());
         }
+
+        robot.telemetry.addData("Hive tip state", hiveTipState);
+        robot.telemetry.addData("x", robot.chassis.follower.pose().x());
+        robot.telemetry.addData("y", robot.chassis.follower.pose().y());
 
         robot.telemetry.addLine("-------");
         robot.telemetry.addData("Current arm angle (degrees)", robot.armHinge.getArmAngleDegrees());
@@ -94,18 +108,36 @@ public class UprightHiveAuto extends RobotOpMode {
         return deadline(waitMs(2000), infiniteAimAndShoot());
     }
 
-    Command goToHiveFarFromPark() {
+    Command goToHiveFromStart() {
         return robot.chassis.followPath(
-                line(Poses.farFromParkStart, Poses.hiveFarFromPark)
-                        .linear(Poses.farFromParkStart, Poses.hiveFarFromPark));
+                line(Poses.nearGardenStartingPose, Poses.hiveNearGarden)
+                        .linear(Poses.nearGardenStartingPose, Poses.hiveNearGarden));
+    }
+
+    Command goToHiveNearGarden() {
+        return robot.chassis.followPath(
+                        line(Poses.gardenCollect, Poses.hiveNearGarden)
+                                .linear(Poses.gardenCollect, Poses.hiveNearGarden));
+    }
+
+    Command goToHiveFarFromGarden() {
+        return robot.chassis.followPath(
+                line(Poses.gardenCollect, Poses.hiveNearGarden)
+                        .linear(Poses.gardenCollect, Poses.hiveNearGarden));
+    }
+
+    Command goToHiveFarFromGardenFromGarden() {
+        return robot.chassis.followPath(
+                line(Poses.gardenCollect, Poses.hiveFarFromGarden)
+                        .linear(Poses.gardenCollect, Poses.hiveFarFromGarden));
     }
 
     Command collectGarden() {
         return sequential(
                 lowerArmAndStopCollecting(),
                 robot.chassis.followPath(
-                        line(Poses.hiveFarFromPark, Poses.gardenSetup)
-                                .linear(Poses.hiveFarFromPark, Poses.gardenSetup)),
+                        curve(Poses.hiveNearGarden, Poses.controlPointToGarden, Poses.gardenSetup)
+                                .constant(Poses.gardenSetup)),
                 robot.chassis.followPath(
                         line(Poses.gardenSetup, Poses.gardenCollect)
                                 .linear(Poses.gardenSetup, Poses.gardenCollect))
@@ -157,6 +189,29 @@ public class UprightHiveAuto extends RobotOpMode {
             robot.flipper.stop();
             robot.gate.close();
         }).requiring(robot.chassis, robot.armHinge, robot.shooter, robot.flipper, robot.gate);
+    }
+
+    Command raiseArmToCheckHive() {
+        return instant(() -> {
+            robot.chassis.lockedOnDrive();
+            robot.armHinge.lookAtHive();
+            robot.shooter.stop();
+            robot.flipper.stop();
+            robot.gate.close();
+            robot.limelight.switchToAllianceHivePipeline();
+        }).requiring(robot.chassis, robot.armHinge, robot.shooter, robot.flipper, robot.gate);
+    }
+
+    Command checkHiveTip() {
+        return instant(() -> {
+            if (robot.limelight.canSeeHiveCell(Limelight.HiveCell.RED_AUDIENCE) ||
+                    robot.limelight.canSeeHiveCell(Limelight.HiveCell.BLUE_SCORING)) {
+                hiveTipState = HiveTipState.TIPPED_TOWARDS_GARDEN;
+            } else if (robot.limelight.canSeeHiveCell(Limelight.HiveCell.BLUE_AUDIENCE) ||
+                    robot.limelight.canSeeHiveCell(Limelight.HiveCell.RED_SCORING)) {
+                hiveTipState = HiveTipState.TIPPED_AWAY_FROM_GARDEN;
+            }
+        });
     }
 
     Command raiseArmAndTakeAim() {

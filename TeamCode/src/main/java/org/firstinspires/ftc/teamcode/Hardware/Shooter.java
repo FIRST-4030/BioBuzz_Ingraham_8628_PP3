@@ -11,7 +11,7 @@ public class Shooter {
     public Flywheel flywheel;
 
     public static final double COLLECT_RPM = -1500;
-    public static final double SHOOT_RPM = 2600;
+    public static final double SHOOT_RPM = 2400;
 
     public Shooter(HardwareMap hardwareMap) {
         flywheel = new Flywheel(hardwareMap, "shooter", DcMotorSimple.Direction.REVERSE);
