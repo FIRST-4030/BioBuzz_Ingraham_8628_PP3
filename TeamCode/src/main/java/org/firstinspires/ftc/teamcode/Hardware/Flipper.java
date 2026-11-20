@@ -55,8 +55,6 @@ public class Flipper {
     // --- Ivy ---
 
     public Command periodic() {
-        return infinite(() -> {
-            flywheel.updatePower();
-        });
+        return infinite(flywheel::updatePower);
     }
 }

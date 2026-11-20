@@ -15,20 +15,9 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class Chassis {
-    //    private double maxPower = 1.0;
-    private double maxSpeed = 1.0;  // make this slower for outreaches
+    private static final double maxSpeed = 1.0;  // make this slower for outreaches
 
     public final DcMotor frontLeftDrive, frontRightDrive, backLeftDrive, backRightDrive;
-    public final Follower follower;
-
-    public enum DriveMode {
-        NORMAL,
-        PRECISE,
-        LOCKED_ON_HIVE,
-        FOLLOWING
-    }
-
-    private DriveMode driveMode = DriveMode.NORMAL;
 
     public Chassis(HardwareMap hardwareMap, ControlHub controlHub) {
         frontLeftDrive = hardwareMap.get(DcMotor.class, "leftFront");
@@ -52,8 +41,6 @@ public class Chassis {
         frontRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backLeftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        follower = controlHub.createRobotSpecificFollower();
     }
 
     public void resetZeroPowerBehavior() {
@@ -61,64 +48,6 @@ public class Chassis {
         frontRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backLeftDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-    }
-
-    // Thanks to FTC16072 for sharing this code!!
-    public void directDrive(double forward, double right, double rotate) {
-        // This calculates the power needed for each wheel based on the amount of forward,
-        // strafe right, and rotate
-        double frontLeftPower = forward + right + rotate;
-        double frontRightPower = forward - right - rotate;
-        double backRightPower = forward + right - rotate;
-        double backLeftPower = forward - right + rotate;
-
-        // This is needed to make sure we don't pass > 1.0 to any wheel
-        // It allows us to keep all the motors in proportion to what they should
-        // be and not get clipped
-//        maxPower = Math.max(maxPower, Math.abs(frontLeftPower));
-//        maxPower = Math.max(maxPower, Math.abs(frontRightPower));
-//        maxPower = Math.max(maxPower, Math.abs(backRightPower));
-//        maxPower = Math.max(maxPower, Math.abs(backLeftPower));
-
-        // We multiply by maxSpeed so that it can be set lower for outreaches
-        // When a young child is driving the robot, we may not want to allow full
-        // speed.
-        frontLeftDrive.setPower(maxSpeed * frontLeftPower);
-        frontRightDrive.setPower(maxSpeed * frontRightPower);
-        backLeftDrive.setPower(maxSpeed * backLeftPower);
-        backRightDrive.setPower(maxSpeed * backRightPower);
-//        frontLeftDrive.setPower(frontLeftPower);
-//        frontRightDrive.setPower(frontRightPower);
-//        backLeftDrive.setPower(backLeftPower);
-//        backRightDrive.setPower(backRightPower);
-    }
-
-    public void lockedOnDrive(double forward, double right, Limelight limelight) {
-        // TODO: Better PID equation for this instead of just a lerp?
-        follower.manual(forward, right, -limelight.getXError() * 0.03);
-    }
-
-    public void arcadeDrive(double forward, double right, double rotate, Limelight limelight) {
-        switch (driveMode) {
-            case NORMAL:
-                follower.manual(-forward, -right, -rotate);
-                break;
-            case PRECISE:
-                follower.manual(-forward * 0.25, -right * 0.25, -rotate * 0.25);
-                break;
-            case LOCKED_ON_HIVE:
-                if (!limelight.resultHasGoodTargets()) {
-                    follower.manual(-forward, -right, -rotate);
-                } else {
-                    lockedOnDrive(-forward, -right, limelight);
-                }
-                break;
-            case FOLLOWING:
-                break;
-            default:
-                stopMotors();
-                break;
-        }
     }
 
     public void stopMotors() {
@@ -140,39 +69,5 @@ public class Chassis {
         telemetry.addData("fright", frontRightDrive.getPower());
         telemetry.addData("lback", backLeftDrive.getPower());
         telemetry.addData("lRIGHT", backRightDrive.getPower());
-    }
-
-    public DriveMode getDriveMode() {
-        return driveMode;
-    }
-
-    public void normalDrive() {
-        driveMode = DriveMode.NORMAL;
-    }
-
-    public void preciseDrive() {
-        driveMode = DriveMode.PRECISE;
-    }
-
-    public void lockedOnDrive() {
-        driveMode = DriveMode.LOCKED_ON_HIVE;
-    }
-
-    // --- Ivy ---
-
-    public Command periodic() {
-        return infinite(follower::update);
-    }
-
-    public Command followPath(Path path) {
-        return instant(() -> driveMode = DriveMode.FOLLOWING).then(follow(follower, path));
-    }
-
-    public Command holdCurrentPose() {
-        return instant(() -> driveMode = DriveMode.FOLLOWING).then(hold(follower));
-    }
-
-    public Command holdPose(Pose pose) {
-        return instant(() -> driveMode = DriveMode.FOLLOWING).then(hold(follower, pose));
     }
 }

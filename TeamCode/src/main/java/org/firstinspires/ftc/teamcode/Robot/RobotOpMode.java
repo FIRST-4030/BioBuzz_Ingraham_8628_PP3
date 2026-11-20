@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.Robot;
 
 import static com.pedropathing.ivy.Scheduler.schedule;
+import static com.pedropathing.ivy.commands.Commands.infinite;
 
 import com.pedropathing.ivy.Scheduler;
 import com.pedropathing.math.Pose;
@@ -16,10 +17,10 @@ public abstract class RobotOpMode extends OpMode {
 
         schedule(
                 robot.limelight.periodic(),
-                robot.chassis.periodic(),
                 robot.armHinge.periodic(),
                 robot.flipper.periodic(),
-                robot.shooter.periodic()
+                robot.shooter.periodic(),
+                infinite(robot.follower::update)
         );
     }
 

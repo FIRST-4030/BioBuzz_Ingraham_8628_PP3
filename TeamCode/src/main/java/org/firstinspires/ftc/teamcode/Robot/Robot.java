@@ -9,6 +9,7 @@ import static com.pedropathing.ivy.groups.Groups.sequential;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import static com.pedropathing.ivy.pedro.PedroCommands.hold;
 
+import com.pedropathing.follower.Follower;
 import com.pedropathing.ivy.Command;
 import com.pedropathing.math.Pose;
 import com.pedropathing.paths.Path;
@@ -33,6 +34,7 @@ public class Robot {
     public final IMU imu;
     public final Limelight limelight;
     public final Chassis chassis;
+    public final Follower follower;
 
     public final Shooter shooter;
     public final Flipper flipper;
@@ -47,6 +49,7 @@ public class Robot {
         imu = hardwareMap.get(IMU.class, "imu");
         limelight = new Limelight(hardwareMap);
         chassis = new Chassis(hardwareMap, controlHub);
+        follower = controlHub.createRobotSpecificFollower();
 
         shooter = new Shooter(hardwareMap);
         flipper = new Flipper(hardwareMap);

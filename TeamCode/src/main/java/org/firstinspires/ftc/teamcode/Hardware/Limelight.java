@@ -65,22 +65,22 @@ public class Limelight {
             case 31:
             case 32:
             case 33:
-                return HiveCell.RED_SCORING;
+                return HiveCell.RED_AUDIENCE;
             case 34:
             case 35:
             case 36:
             case 37:
-                return HiveCell.RED_AUDIENCE;
+                return HiveCell.RED_SCORING;
             case 38:
             case 39:
             case 40:
             case 41:
-                return HiveCell.BLUE_AUDIENCE;
+                return HiveCell.BLUE_SCORING;
             case 42:
             case 43:
             case 44:
             case 45:
-                return HiveCell.BLUE_SCORING;
+                return HiveCell.BLUE_AUDIENCE;
             default:
                 return HiveCell.NONE;
         }
@@ -141,6 +141,10 @@ public class Limelight {
 
     public boolean canSeeHiveCell(HiveCell hiveCell) {
         boolean canSeeHiveCell = false;
+
+        if (!latestStatusIsValid()) {
+            return false;
+        }
 
         List<LLResultTypes.FiducialResult> fiducials = internalLatestResult.getFiducialResults();
         if (fiducials == null) return false;
