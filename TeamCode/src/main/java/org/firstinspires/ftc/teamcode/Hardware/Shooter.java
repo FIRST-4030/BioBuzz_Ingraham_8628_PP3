@@ -13,13 +13,13 @@ public class Shooter {
     public Flywheel flywheel2;
 
     public static final double COLLECT_RPM = -1500;
-    public static double GENERAL_SHOOT_RPM = 2500;
+    public static double GENERAL_SHOOT_RPM = 2600;
 
     public static final double MAX_RPM = 2700;
 
     public Shooter(HardwareMap hardwareMap) {
         flywheel = new Flywheel(hardwareMap, "shooter", DcMotorSimple.Direction.REVERSE);
-        flywheel.setControllerValues(0.007, 0.000341, 56, 150.0, false);
+        flywheel.setControllerValues(0.007, 0.00046, 56, 100.0, false);
 //
 //        flywheel2 = new Flywheel(hardwareMap, "shooter_2", DcMotorSimple.Direction.FORWARD);
 //        flywheel2.setControllerValues(0.007, 0.000341, 56, 150.0, false);
