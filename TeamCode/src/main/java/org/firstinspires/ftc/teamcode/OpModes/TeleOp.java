@@ -3,16 +3,14 @@ package org.firstinspires.ftc.teamcode.OpModes;
 import static com.pedropathing.ivy.commands.Commands.infinite;
 import static com.pedropathing.ivy.commands.Commands.instant;
 import static com.pedropathing.ivy.commands.Commands.waitUntil;
-import static com.pedropathing.ivy.groups.Groups.deadline;
 import static com.pedropathing.ivy.groups.Groups.sequential;
 
 import com.pedropathing.ivy.Command;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 
 import org.firstinspires.ftc.generalUtilities.Blackboard;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Hardware.Limelight;
+import org.firstinspires.ftc.teamcode.Hardware.Shooter;
 import org.firstinspires.ftc.teamcode.Robot.RobotOpMode;
 import org.firstinspires.ftc.teamcode.pedro.Poses;
 
@@ -41,6 +39,7 @@ public class TeleOp extends RobotOpMode {
 
     @Override
     public void start() {
+        super.start();
         robot.follower.setPose(Poses.nearGardenStartingPose);
         lowerArmAndStopCollecting().schedule();
     }
@@ -48,9 +47,9 @@ public class TeleOp extends RobotOpMode {
     @Override
     public void loop() {
         if (aiming && robot.limelight.resultHasGoodTargets()) {
-            robot.follower.manual(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -robot.limelight.getXError() * 0.03);
+            robot.lockedOntoHiveArcadeDrive(gamepad1);
         } else {
-            robot.follower.manual(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x);
+            robot.arcadeDrive(gamepad1);
         }
 
         if (gamepad1.rightTriggerWasPressed()) infiniteAimAndShoot().schedule();
@@ -62,6 +61,14 @@ public class TeleOp extends RobotOpMode {
         if (gamepad1.leftTriggerWasPressed()) ejectSequence().schedule();
 
         if (gamepad1.dpadUpWasPressed()) setUpForFlower().schedule();
+
+        if (gamepad1.dpadLeftWasPressed()) {
+            Shooter.GENERAL_SHOOT_RPM -= 100;
+        }
+
+        if (gamepad1.dpadRightWasPressed()) {
+            Shooter.GENERAL_SHOOT_RPM += 100;
+        }
 
         handleTelemetry();
         super.loop();
@@ -79,6 +86,8 @@ public class TeleOp extends RobotOpMode {
         robot.telemetry.addData("Can see blue audience", robot.limelight.canSeeHiveCell(Limelight.HiveCell.BLUE_AUDIENCE));
         robot.telemetry.addData("Can see red scoring", robot.limelight.canSeeHiveCell(Limelight.HiveCell.RED_SCORING));
         robot.telemetry.addData("Can see blue scoring", robot.limelight.canSeeHiveCell(Limelight.HiveCell.BLUE_SCORING));
+        robot.telemetry.addData("Distance to hive (CM)", robot.limelight.getDistanceCMFromHive());
+        robot.telemetry.addData("Shooter rpm", Shooter.GENERAL_SHOOT_RPM);
 
         robot.telemetry.addLine("-------");
         robot.telemetry.addData("Follower x", robot.follower.pose().x());
@@ -113,6 +122,7 @@ public class TeleOp extends RobotOpMode {
 
     Command lowerArmAndCollect() {
         return instant(() -> {
+            aiming = false;
             robot.armHinge.moveToCollectingPosition();
             robot.shooter.stop();
             robot.flipper.doCollectRPM();
@@ -122,6 +132,7 @@ public class TeleOp extends RobotOpMode {
 
     Command lowerArmAndStopCollecting() {
         return instant(() -> {
+            aiming = false;
             robot.armHinge.moveToCollectingPosition();
             robot.shooter.stop();
             robot.flipper.stop();
@@ -132,6 +143,7 @@ public class TeleOp extends RobotOpMode {
     Command ejectSequence() {
         return sequential(
                 instant(() -> {
+                    aiming = false;
                     robot.armHinge.moveToCollectingPosition();
                     robot.shooter.stop();
                     robot.flipper.stop();
@@ -147,6 +159,7 @@ public class TeleOp extends RobotOpMode {
 
     Command setUpForFlower() {
         return instant(() -> {
+            aiming = false;
             robot.armHinge.moveToFlowerPosition();
             robot.shooter.stop();
             robot.flipper.stop();
@@ -158,7 +171,7 @@ public class TeleOp extends RobotOpMode {
         return instant(() -> {
             aiming = true;
             robot.armHinge.lookAtHive();
-            robot.shooter.doShootRPM();
+            robot.shooter.doGeneralShootRPM();
             robot.flipper.stop();
             robot.gate.close();
             robot.limelight.switchToAllianceHivePipeline();

@@ -36,5 +36,10 @@ public class Poses {
     public static final Pose nearGardenPark = p.of(12, 96, 90);
 
     public static final Pose farFromGardenParkSetup = p.of(25, 35, 90);
-    public static final Pose farFromGardenPark = p.of(12, 96, 90);
+    public static final Pose farFromGardenPark = p.of(12, 112, 0);
+
+    public static final Pose nearGardenFlowerSetup = p.of(50, 123, 113);
+    public static final Pose nearGardenFlowerSetupControlPoint = p.of(40, 120, 113);
+    public static final Pose nearGardenFlower1 = p.of(47.7, 123.7, 115);
+    public static final Pose nearGardenFlower2 = p.of(42.8, 124.2, 113);
 }

@@ -192,6 +192,11 @@ public class Limelight {
         }
     }
 
+    public double getDistanceCMFromHive() {
+        if (!resultHasGoodTargets()) return 0;
+        return (-16.48877 * getTa()) + 155.21188;
+    }
+
     public double getTa() {
         if (resultHasGoodTargets()) {
             return internalLatestResult.getTa();

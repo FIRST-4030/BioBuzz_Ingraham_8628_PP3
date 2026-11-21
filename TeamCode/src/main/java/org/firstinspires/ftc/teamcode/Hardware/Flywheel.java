@@ -24,6 +24,7 @@ public class Flywheel {
         motor = (DcMotorEx) hardwareMap.get(DcMotor.class, name);
         motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);  // WITH OUT!
+        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         motor.setDirection(dir);
     }
 

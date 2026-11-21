@@ -12,7 +12,6 @@ import org.firstinspires.ftc.teamcode.Hardware.ControlHub;
 import org.firstinspires.ftc.teamcode.Hardware.Flywheel;
 import org.firstinspires.ftc.teamcode.Hardware.Limelight;
 
-@Disabled
 @TeleOp(name = "Flywheel TestOp", group="Util")
 public class FlywheelTestOp extends OpMode {
 
@@ -22,10 +21,11 @@ public class FlywheelTestOp extends OpMode {
     Limelight limelight;
     Chassis chassis;
     Flywheel shooterFlywheel; // TODO: Wrong flywheel
+    Flywheel shooterFlywheel2; // TODO: Wrong flywheel
 
     double targetVelocity = 0;
-    double kVelocity = 0.00046;
-    double kP = 0.007;
+    double kVelocity = 0.000341;
+    double kP = 0;
 
     boolean leftStickMode = false;
 
@@ -37,6 +37,7 @@ public class FlywheelTestOp extends OpMode {
         limelight = new Limelight(hardwareMap);
         chassis = new Chassis(hardwareMap, controlHub);
         shooterFlywheel = new Flywheel(hardwareMap, "shooter", DcMotorSimple.Direction.REVERSE);
+        shooterFlywheel2 = new Flywheel(hardwareMap, "shooter_2", DcMotorSimple.Direction.FORWARD);
     }
 
     public void init_loop() {
@@ -48,26 +49,32 @@ public class FlywheelTestOp extends OpMode {
     public void start() {
         limelight.switchToAllianceHivePipeline();
         shooterFlywheel.stop();
+        shooterFlywheel2.stop();
     }
 
     public void loop() {
         limelight.updateData(); // This line is vital, and should be called first in the loop
         shooterFlywheel.setTargetRPM(targetVelocity);
+        shooterFlywheel2.setTargetRPM(targetVelocity);
 
-        shooterFlywheel.setControllerValues(kP, kVelocity, 56, 0.02, false);
+        shooterFlywheel.setControllerValues(kP, kVelocity, 56, 50, true);
+        shooterFlywheel2.setControllerValues(kP, kVelocity, 56, 50, true);
 
         shooterFlywheel.updatePower();
+        shooterFlywheel2.updatePower();
 
         if (gamepad1.dpadUpWasPressed()) {
             leftStickMode = false;
-            targetVelocity += 10;
+            targetVelocity += 100;
         } else if (gamepad1.dpadDownWasPressed()) {
             leftStickMode = false;
-            targetVelocity -= 10;
+            targetVelocity -= 100;
         } else if (gamepad1.dpadRightWasPressed()) {
             kP += 0.0001;
+//            kVelocity += 0.000001;
         } else if (gamepad1.dpadLeftWasPressed()) {
             kP -= 0.0001;
+//            kVelocity -= 0.000001;
         }
 
         if (gamepad1.left_stick_x != 0) {
@@ -75,7 +82,7 @@ public class FlywheelTestOp extends OpMode {
         }
 
         if (leftStickMode) {
-            targetVelocity = gamepad1.left_stick_x * 2000;
+            targetVelocity = gamepad1.left_stick_x * 2700;
         }
 
         handleTelemetry();

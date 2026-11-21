@@ -23,7 +23,7 @@ public class ArmHinge {
     public static final double AIMING_ARM_ANGLE_DEG = 118.0;
     public static final double FLOWER_ARM_ANGLE_DEG = 125.0;
 
-    public static final double ANGLE_TOLERANCE = 4;
+    public static final double ANGLE_TOLERANCE = 10;
 
     private static final double kP = 0.04;
     private static final double kG = 0.28;

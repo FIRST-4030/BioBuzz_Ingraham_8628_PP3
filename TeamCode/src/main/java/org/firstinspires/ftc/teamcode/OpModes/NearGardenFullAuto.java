@@ -44,6 +44,7 @@ public class NearGardenFullAuto extends RobotOpMode {
 
     @Override
     public void start() {
+        super.start();
         robot.follower.setPose(Poses.nearGardenStartingPose);
 
         sequential(
@@ -247,7 +248,7 @@ public class NearGardenFullAuto extends RobotOpMode {
     Command raiseArmAndTakeAim() {
         return instant(() -> {
             robot.armHinge.lookAtHive();
-            robot.shooter.doShootRPM();
+            robot.shooter.doGeneralShootRPM();
             robot.flipper.stop();
             robot.gate.close();
             robot.limelight.switchToAllianceHivePipeline();
@@ -258,6 +259,7 @@ public class NearGardenFullAuto extends RobotOpMode {
         return sequential(
                 raiseArmAndTakeAim(),
                 infinite(() -> {
+                    robot.lockOntoHiveWhileStill();
                     if (robot.isReadyToShoot()) {
                         robot.gate.open();
                         robot.flipper.doShootRPM();

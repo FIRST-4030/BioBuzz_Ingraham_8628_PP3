@@ -1,19 +1,11 @@
 package org.firstinspires.ftc.teamcode.Robot;
 
-import static com.pedropathing.ivy.commands.Commands.infinite;
-import static com.pedropathing.ivy.commands.Commands.instant;
-import static com.pedropathing.ivy.commands.Commands.waitMs;
-import static com.pedropathing.ivy.commands.Commands.waitUntil;
-import static com.pedropathing.ivy.groups.Groups.deadline;
-import static com.pedropathing.ivy.groups.Groups.sequential;
-import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import static com.pedropathing.ivy.pedro.PedroCommands.hold;
 
 import com.pedropathing.follower.Follower;
-import com.pedropathing.ivy.Command;
-import com.pedropathing.math.Pose;
-import com.pedropathing.paths.Path;
+import com.pedropathing.follower.ManualDrive;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 
@@ -61,5 +53,28 @@ public class Robot {
         return armHinge.isLookingForHive() &&
                 limelight.isOnTarget() &&
                 shooter.atSpeed();
+    }
+
+    public void arcadeDrive(Gamepad gamepad) {
+        ManualDrive.driveOrHold(follower,
+                -gamepad.left_stick_y, -gamepad.left_stick_x, -gamepad.right_stick_x);
+    }
+
+    public void lockedOntoHiveArcadeDrive(Gamepad gamepad) {
+        if (limelight.resultHasGoodTargets()) {
+            ManualDrive.driveOrHold(follower,
+                    -gamepad.left_stick_y, -gamepad.left_stick_x, limelight.getXError() * -0.03);
+        } else {
+            arcadeDrive(gamepad);
+        }
+    }
+
+    public void lockOntoHiveWhileStill() {
+        if (limelight.resultHasGoodTargets()) {
+            ManualDrive.driveOrHold(follower,
+                    0, 0, limelight.getXError() * 0.03);
+        } else {
+            ManualDrive.driveOrHold(follower, 0, 0, 0);
+        }
     }
 }
