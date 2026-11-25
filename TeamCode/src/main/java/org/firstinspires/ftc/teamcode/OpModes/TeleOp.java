@@ -19,15 +19,11 @@ import java.util.Locale;
 @com.qualcomm.robotcore.eventloop.opmode.TeleOp(name="TeleOp")
 public class TeleOp extends RobotOpMode {
 
-    GoBildaPinpointDriver pinpoint;
-
     boolean aiming = false;
 
     @Override
     public void init() {
         super.init();
-
-        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
     }
 
     @Override
@@ -70,8 +66,8 @@ public class TeleOp extends RobotOpMode {
             Shooter.GENERAL_SHOOT_RPM += 100;
         }
 
-        handleTelemetry();
         super.loop();
+        handleTelemetry();
     }
 
     public void handleTelemetry() {
@@ -116,6 +112,8 @@ public class TeleOp extends RobotOpMode {
         } else {
             robot.telemetry.addLine("No good targets visible");
         }
+
+        robot.telemetry.update();
     }
 
     // --- Ivy ---

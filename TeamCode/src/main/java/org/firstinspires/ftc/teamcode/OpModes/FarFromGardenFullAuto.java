@@ -7,7 +7,6 @@ import static com.pedropathing.ivy.commands.Commands.instant;
 import static com.pedropathing.ivy.commands.Commands.waitMs;
 import static com.pedropathing.ivy.commands.Commands.waitUntil;
 import static com.pedropathing.ivy.groups.Groups.deadline;
-import static com.pedropathing.ivy.groups.Groups.repeat;
 import static com.pedropathing.ivy.groups.Groups.sequential;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 
@@ -41,17 +40,16 @@ public class FarFromGardenFullAuto extends RobotOpMode {
         robot.follower.setPose(Poses.farFromGardenStartingPose);
 
         sequential(
-                goToHiveFromStart(),
-                raiseArmToCheckHive(),
                 sequential(
+                        goToHiveFromStart(),
+                        raiseArmToCheckHive(),
                         waitUntilSeesHiveFarFromGarden(),
                         waitMs(500),
                         shoot(),
+
                         lowerArmAndStopCollecting(),
                         shoveOutFlowerPollenHaphazardly(),
-//                        raiseArmToCheckHive(),
-//                        waitUntilSeesHiveFarFromGarden(),
-//                        shoot(),
+                        lowerArmAndStopCollecting(),
                         waitUntil(() -> false) // Just sit and wait
                 ).until(() -> getRuntime() > 23),
                 lowerArmAndStopCollecting(),
@@ -61,8 +59,8 @@ public class FarFromGardenFullAuto extends RobotOpMode {
 
     @Override
     public void loop() {
-        handleTelemetry();
         super.loop();
+        handleTelemetry();
     }
 
     public void handleTelemetry() {
@@ -104,6 +102,8 @@ public class FarFromGardenFullAuto extends RobotOpMode {
         } else {
             robot.telemetry.addLine("No good targets visible");
         }
+
+        robot.telemetry.update();
     }
 
     // --- Ivy ---
@@ -165,10 +165,9 @@ public class FarFromGardenFullAuto extends RobotOpMode {
                 doOneLoopOfFlowerShoving(),
                 follow(
                         robot.follower,
-                        line(Poses.nearGardenFlower1, Poses.hiveFarFromGarden)
-                                .linear(Poses.nearGardenFlower1, Poses.hiveFarFromGarden)
-                ),
-                lowerArmAndStopCollecting()
+                        line(Poses.nearGardenFlowerSetup, Poses.hiveFarFromGarden)
+                                .linear(Poses.nearGardenFlowerSetup, Poses.hiveFarFromGarden)
+                )
         );
     }
 

@@ -23,13 +23,6 @@ import java.util.Locale;
 @com.qualcomm.robotcore.eventloop.opmode.Autonomous(name="Near Garden Full Auto")
 public class NearGardenFullAuto extends RobotOpMode {
 
-    enum HiveTipState {
-        UPRIGHT_TOWARDS_GARDEN,
-        UPRIGHT_AWAY_FROM_GARDEN,
-    }
-
-    HiveTipState hiveTipState = HiveTipState.UPRIGHT_TOWARDS_GARDEN;
-
     @Override
     public void init() {
         super.init();
@@ -48,31 +41,28 @@ public class NearGardenFullAuto extends RobotOpMode {
         robot.follower.setPose(Poses.nearGardenStartingPose);
 
         sequential(
-                goToHiveFromStart(),
-                shoot(),
+                sequential(
+                        goToHiveFromStart(),
+                        shoot(),
 
-                collectGarden(),
-                raiseArmToCheckHive(),
-                goToHiveNearGarden(),
-                checkForHiveTip(),
-                conditional(
-                        () -> hiveTipState == HiveTipState.UPRIGHT_AWAY_FROM_GARDEN,
+                        collectGarden(),
+                        raiseArmToCheckHive(),
+                        goToHiveNearGarden(),
+                        waitUntilSeesHiveNearGarden(),
+                        waitMs(500),
+                        shoot(),
                         lowerArmAndStopCollecting(),
-                        sequential(
-                                shoot(),
-                                lowerArmAndStopCollecting()
-                        )
-                ),
-
-                waitUntil(() -> getRuntime() > 23),
+                        waitUntil(() -> false) // Just sit and wait
+                ).until(() -> getRuntime() > 23),
+                lowerArmAndStopCollecting(),
                 parkFromNearGarden()
         ).schedule();
     }
 
     @Override
     public void loop() {
-        handleTelemetry();
         super.loop();
+        handleTelemetry();
     }
 
     public void handleTelemetry() {
@@ -84,7 +74,6 @@ public class NearGardenFullAuto extends RobotOpMode {
             robot.telemetry.addData("Alliance", Blackboard.getAlliance());
         }
 
-        robot.telemetry.addData("Hive tip state", hiveTipState);
         robot.telemetry.addData("Can see red audience", robot.limelight.canSeeHiveCell(Limelight.HiveCell.RED_AUDIENCE));
         robot.telemetry.addData("Can see blue audience", robot.limelight.canSeeHiveCell(Limelight.HiveCell.BLUE_AUDIENCE));
         robot.telemetry.addData("Can see red scoring", robot.limelight.canSeeHiveCell(Limelight.HiveCell.RED_SCORING));
@@ -114,9 +103,18 @@ public class NearGardenFullAuto extends RobotOpMode {
         } else {
             robot.telemetry.addLine("No good targets visible");
         }
+
+        robot.telemetry.update();
     }
 
     // --- Ivy ---
+
+    Command waitUntilSeesHiveNearGarden() {
+        return waitUntil(() ->
+                robot.limelight.canSeeHiveCell(Limelight.HiveCell.BLUE_SCORING) ||
+                        robot.limelight.canSeeHiveCell(Limelight.HiveCell.RED_AUDIENCE)
+        );
+    }
 
     Command parkFromNearGarden() {
         return follow(
@@ -219,30 +217,6 @@ public class NearGardenFullAuto extends RobotOpMode {
             robot.gate.close();
             robot.limelight.switchToAllianceHivePipeline();
         }).requiring(robot.chassis, robot.armHinge, robot.shooter, robot.flipper, robot.gate);
-    }
-
-    Command checkForHiveTip() {
-        return instant(() -> {
-            boolean canSeeHiveNearGarden = (robot.limelight.canSeeHiveCell(Limelight.HiveCell.RED_AUDIENCE) ||
-                            robot.limelight.canSeeHiveCell(Limelight.HiveCell.BLUE_SCORING));
-            boolean canSeeHiveAwayFromGarden = (robot.limelight.canSeeHiveCell(Limelight.HiveCell.RED_AUDIENCE) ||
-                    robot.limelight.canSeeHiveCell(Limelight.HiveCell.BLUE_SCORING));
-
-            HiveTipState oldHiveTipState = hiveTipState;
-
-            switch (oldHiveTipState) {
-                case UPRIGHT_TOWARDS_GARDEN:
-                    if (!canSeeHiveNearGarden) {
-                        hiveTipState = HiveTipState.UPRIGHT_AWAY_FROM_GARDEN;
-                    }
-                    break;
-                case UPRIGHT_AWAY_FROM_GARDEN:
-                    if (!canSeeHiveAwayFromGarden) {
-                        hiveTipState = HiveTipState.UPRIGHT_TOWARDS_GARDEN;
-                    }
-                    break;
-            }
-        });
     }
 
     Command raiseArmAndTakeAim() {
